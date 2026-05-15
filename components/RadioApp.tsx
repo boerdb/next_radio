@@ -36,6 +36,7 @@ export function RadioApp() {
         station={currentStation}
         nowPlaying={nowPlaying}
         isPlaying={isPlaying}
+        loading={loading}
       />
       <StationList
         stations={stations}

@@ -1,6 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import type { Station } from "@/lib/types";
+
+const APP_ICON = "/icons/icon-512.png";
 
 interface PlayerBarProps {
   station: Station | null;
@@ -36,7 +39,14 @@ export function PlayerBar({
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[var(--primary)] text-white transition-opacity disabled:opacity-40"
         >
           {loading ? (
-            <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            <Image
+              src={APP_ICON}
+              alt=""
+              width={28}
+              height={28}
+              className="rounded-md animate-pulse"
+              aria-hidden
+            />
           ) : isPlaying ? (
             <PauseIcon />
           ) : (

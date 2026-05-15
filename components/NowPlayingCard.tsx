@@ -3,16 +3,20 @@
 import Image from "next/image";
 import type { NowPlaying, Station } from "@/lib/types";
 
+const APP_ICON = "/icons/icon-512.png";
+
 interface NowPlayingCardProps {
   station: Station | null;
   nowPlaying: NowPlaying | null;
   isPlaying: boolean;
+  loading?: boolean;
 }
 
 export function NowPlayingCard({
   station,
   nowPlaying,
   isPlaying,
+  loading = false,
 }: NowPlayingCardProps) {
   const art = nowPlaying?.art ?? station?.defaultArt ?? "/icons/icon-192.png";
   const artist = nowPlaying?.artist ?? station?.name ?? "Kies een station";
@@ -31,12 +35,27 @@ export function NowPlayingCard({
           src={art}
           alt={`${artist} - ${title}`}
           fill
-          className="object-cover"
+          className={`object-cover rounded-2xl transition-opacity duration-300 ${loading ? "opacity-25" : "opacity-100"}`}
           sizes="280px"
           priority
           unoptimized={art.startsWith("http")}
         />
-        {showLiveBadge && (
+        {loading && (
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            aria-hidden
+          >
+            <Image
+              src={APP_ICON}
+              alt=""
+              width={160}
+              height={160}
+              className="rounded-2xl animate-pulse drop-shadow-lg"
+              priority
+            />
+          </div>
+        )}
+        {showLiveBadge && !loading && (
           <span className="absolute bottom-2 right-2 rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-medium text-white">
             LIVE
           </span>
