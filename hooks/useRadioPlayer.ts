@@ -87,21 +87,34 @@ export function useRadioPlayer() {
     pendingTrackRef.current = null;
   }, []);
 
-  const applyMetadata = useCallback(
-    (data: NowPlaying) => {
-      const current = nowPlayingRef.current;
+  const enrichArt = useCallback(
+    (data: NowPlaying, station: Station, prev?: NowPlaying | null) => ({
+      ...data,
+      art:
+        data.art ??
+        (prev && isSameTrack(prev, data) ? prev.art : null) ??
+        station.defaultArt ??
+        null,
+    }),
+    [],
+  );
 
-      if (!current || isSameTrack(current, data)) {
+  const applyMetadata = useCallback(
+    (data: NowPlaying, station: Station) => {
+      const current = nowPlayingRef.current;
+      const enriched = enrichArt(data, station, current);
+
+      if (!current || isSameTrack(current, enriched)) {
         clearTrackChangeTimer();
         setNowPlaying((prev) =>
-          prev && isSameTrack(prev, data)
-            ? { ...data, art: data.art ?? prev.art }
-            : data,
+          prev && isSameTrack(prev, enriched)
+            ? enrichArt(enriched, station, prev)
+            : enriched,
         );
         return;
       }
 
-      pendingTrackRef.current = data;
+      pendingTrackRef.current = enriched;
       if (trackChangeTimerRef.current) {
         clearTimeout(trackChangeTimerRef.current);
       }
@@ -113,7 +126,7 @@ export function useRadioPlayer() {
         trackChangeTimerRef.current = null;
       }, TRACK_CHANGE_DELAY_MS);
     },
-    [clearTrackChangeTimer],
+    [clearTrackChangeTimer, enrichArt],
   );
 
   const fetchMetadata = useCallback(
@@ -131,7 +144,7 @@ export function useRadioPlayer() {
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as NowPlaying | null;
-        if (data) applyMetadata(data);
+        if (data) applyMetadata(data, station);
       } catch {
         /* ignore poll errors */
       }

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveArtwork } from "@/lib/artwork";
 import { parseLiveMetadataRaw } from "@/lib/liveMetadata";
-import { LIVE_METADATA_URL } from "@/lib/stations";
+import { getStationById, LIVE_METADATA_URL } from "@/lib/stations";
 import type { NowPlaying } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,13 @@ export async function GET() {
 
     const raw = await res.text();
     const { artist, title } = parseLiveMetadataRaw(raw);
-    const art = await resolveArtwork(artist, title);
+    const liveStation = getStationById("live");
+    const art = await resolveArtwork(
+      artist,
+      title,
+      null,
+      liveStation?.defaultArt ?? null,
+    );
 
     const result: NowPlaying = {
       artist: artist || "Bens Web Radio Live",

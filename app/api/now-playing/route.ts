@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveArtwork } from "@/lib/artwork";
-import { AZURACAST_BASE } from "@/lib/stations";
+import { AZURACAST_BASE, getStationByShortcode } from "@/lib/stations";
 import type { NowPlaying } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -29,11 +29,12 @@ export async function GET(request: NextRequest) {
 
     const artist = song.artist ?? "";
     const title = song.title ?? "";
+    const stationConfig = getStationByShortcode(stationId);
     const art = await resolveArtwork(
       artist,
       title,
       song.art,
-      data.station?.fallback_art,
+      data.station?.fallback_art ?? stationConfig?.defaultArt ?? null,
     );
 
     const result: NowPlaying = {

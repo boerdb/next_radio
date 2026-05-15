@@ -12,10 +12,15 @@ export async function lookupItunesCoverArt(
   title: string,
 ): Promise<string | null> {
   const term = encodeURIComponent(`${artist} ${title}`.trim());
+  if (!term || term === "%20") return null;
+
   const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
 
   try {
-    const res = await fetch(url, { next: { revalidate: 86400 } });
+    const res = await fetch(url, {
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(5000),
+    });
     if (!res.ok) return null;
     const data = (await res.json()) as {
       results?: { artworkUrl100?: string }[];
@@ -39,6 +44,7 @@ export async function lookupMusicBrainzCoverArt(
     const searchRes = await fetch(searchUrl, {
       headers: { "User-Agent": MB_USER_AGENT },
       next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(5000),
     });
     if (!searchRes.ok) return null;
 
@@ -53,15 +59,27 @@ export async function lookupMusicBrainzCoverArt(
       {
         headers: { "User-Agent": MB_USER_AGENT },
         next: { revalidate: 86400 },
+        signal: AbortSignal.timeout(5000),
       },
     );
     if (!artRes.ok) return null;
 
     const artData = (await artRes.json()) as {
-      images?: { front?: boolean; thumbnails?: { small?: string } }[];
+      images?: {
+        front?: boolean;
+        image?: string;
+        thumbnails?: { small?: string; large?: string };
+      }[];
     };
-    const front = artData.images?.find((img) => img.front);
-    return front?.thumbnails?.small ?? artData.images?.[0]?.thumbnails?.small ?? null;
+    const front = artData.images?.find((img) => img.front) ?? artData.images?.[0];
+    if (!front) return null;
+
+    return (
+      front.thumbnails?.large ??
+      front.image ??
+      front.thumbnails?.small ??
+      null
+    );
   } catch {
     return null;
   }
@@ -73,13 +91,18 @@ export async function findGenericCoverArt(
 ): Promise<string | null> {
   if (!artist.trim() && !title.trim()) return null;
 
-  const itunes = await lookupItunesCoverArt(artist, title);
-  if (itunes) return itunes;
+  const [itunes, musicBrainz] = await Promise.allSettled([
+    lookupItunesCoverArt(artist, title),
+    lookupMusicBrainzCoverArt(artist, title),
+  ]);
 
-  return lookupMusicBrainzCoverArt(artist, title);
+  if (itunes.status === "fulfilled" && itunes.value) return itunes.value;
+  if (musicBrainz.status === "fulfilled" && musicBrainz.value) {
+    return musicBrainz.value;
+  }
+
+  return null;
 }
-
-const ARTWORK_LOOKUP_TIMEOUT_MS = 2000;
 
 export async function resolveArtwork(
   artist: string,
@@ -91,12 +114,6 @@ export async function resolveArtwork(
     return azuraArt;
   }
 
-  const generic = await Promise.race([
-    findGenericCoverArt(artist, title),
-    new Promise<null>((resolve) =>
-      setTimeout(() => resolve(null), ARTWORK_LOOKUP_TIMEOUT_MS),
-    ),
-  ]);
-
+  const generic = await findGenericCoverArt(artist, title);
   return generic ?? fallback ?? null;
 }

@@ -1,71 +1,64 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   dismissAndroidInstallBanner,
   shouldShowAndroidInstallBanner,
 } from "@/lib/isAndroidInstallable";
-import type { BeforeInstallPromptEvent } from "@/lib/pwaInstall";
+import {
+  clearDeferredInstallPrompt,
+  getDeferredInstallPrompt,
+  subscribeInstallPrompt,
+} from "@/lib/pwaInstall";
 
 export function useAndroidInstallPrompt() {
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
-  const [showFallback, setShowFallback] = useState(false);
-  const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
+  const [visible, setVisible] = useState(false);
+  const [canInstall, setCanInstall] = useState(false);
 
   useEffect(() => {
     if (!shouldShowAndroidInstallBanner()) return;
 
-    const onBeforeInstallPrompt = (event: BeforeInstallPromptEvent) => {
-      event.preventDefault();
-      deferredPromptRef.current = event;
-      setDeferredPrompt(event);
-      setShowFallback(false);
+    const sync = () => {
+      setCanInstall(getDeferredInstallPrompt() !== null);
     };
 
-    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
+    setVisible(true);
+    sync();
 
-    const fallbackTimer = window.setTimeout(() => {
-      if (
-        !deferredPromptRef.current &&
-        shouldShowAndroidInstallBanner()
-      ) {
-        setShowFallback(true);
-      }
-    }, 3000);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt);
-      window.clearTimeout(fallbackTimer);
-    };
+    const unsubscribe = subscribeInstallPrompt(sync);
+    return unsubscribe;
   }, []);
 
-  const visible =
-    shouldShowAndroidInstallBanner() &&
-    (deferredPrompt !== null || showFallback);
-
   const install = useCallback(async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
+    const prompt = getDeferredInstallPrompt();
+    if (!prompt) return;
+
+    await prompt.prompt();
+    const { outcome } = await prompt.userChoice;
     if (outcome === "accepted") {
       dismissAndroidInstallBanner();
+      setVisible(false);
     }
-    deferredPromptRef.current = null;
-    setDeferredPrompt(null);
-    setShowFallback(false);
-  }, [deferredPrompt]);
+    clearDeferredInstallPrompt();
+    setCanInstall(false);
+  }, []);
 
   const dismiss = useCallback(() => {
     dismissAndroidInstallBanner();
-    deferredPromptRef.current = null;
-    setDeferredPrompt(null);
-    setShowFallback(false);
+    clearDeferredInstallPrompt();
+    setVisible(false);
+    setCanInstall(false);
   }, []);
+
+  useEffect(() => {
+    const onInstalled = () => dismiss();
+    window.addEventListener("appinstalled", onInstalled);
+    return () => window.removeEventListener("appinstalled", onInstalled);
+  }, [dismiss]);
 
   return {
     visible,
-    canInstall: deferredPrompt !== null,
+    canInstall,
     install,
     dismiss,
   };

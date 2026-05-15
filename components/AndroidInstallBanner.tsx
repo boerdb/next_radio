@@ -8,14 +8,14 @@ export function AndroidInstallBanner() {
   if (!visible) return null;
 
   return (
-    <motion
+    <div
       className="android-install-banner mx-4 mt-2 shrink-0 rounded-xl border border-[var(--primary)]/40 bg-[var(--card)] p-4 shadow-lg shadow-black/30"
       role="region"
       aria-label="App installeren op Android"
     >
-      <motion className="mb-3 flex items-start justify-between gap-3">
-        <motion className="flex items-center gap-3">
-          <motion className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/20">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--primary)]/20">
             <img
               src="/icons/icon-192.png"
               alt=""
@@ -23,14 +23,14 @@ export function AndroidInstallBanner() {
               height={32}
               className="rounded-md"
             />
-          </motion>
-          <motion>
+          </div>
+          <div>
             <p className="font-semibold text-white">Bens Music op je telefoon</p>
             <p className="text-xs text-[var(--text-muted)]">
               Installeer de app voor sneller luisteren
             </p>
-          </motion>
-        </motion>
+          </div>
+        </div>
         <button
           type="button"
           onClick={dismiss}
@@ -39,10 +39,10 @@ export function AndroidInstallBanner() {
         >
           <CloseIcon />
         </button>
-      </motion>
+      </div>
 
       {canInstall ? (
-        <motion>
+        <div>
           <p className="text-sm text-[var(--foreground)]">
             Voeg Bens Music toe aan je startscherm voor snelle toegang en
             fullscreen luisteren.
@@ -54,7 +54,7 @@ export function AndroidInstallBanner() {
           >
             App installeren
           </button>
-        </motion>
+        </div>
       ) : (
         <ol className="space-y-2.5 text-sm text-[var(--foreground)]">
           <li className="flex gap-3">
@@ -102,7 +102,7 @@ export function AndroidInstallBanner() {
       >
         Begrepen, verberg dit bericht
       </button>
-    </motion>
+    </div>
   );
 }
 

@@ -38,14 +38,27 @@ export const STATIONS: Station[] = [
     stationApiId: 4,
     name: "Bens Web Radio Live",
     streamUrl: "https://stream.benswebradio.nl/live",
+    defaultArt: `${AZURACAST_BASE}/static/uploads/station1/album_art.1772232083.png`,
   },
   {
     id: "nposoul",
     stationApiId: 0,
     name: "NPO Soul & Jazz",
     streamUrl: NPO_STREAM_URL,
+    defaultArt: `${AZURACAST_BASE}/static/uploads/station3/album_art.1772217617.jpg`,
   },
 ];
+
+export function getStationByShortcode(shortcode: string): Station | undefined {
+  const match = /^station(\d)$/.exec(shortcode);
+  if (!match) return undefined;
+  const apiId = Number(match[1]);
+  return STATIONS.find((s) => s.stationApiId === apiId);
+}
+
+export function getStationById(id: string): Station | undefined {
+  return STATIONS.find((s) => s.id === id);
+}
 
 export function getStationShortcode(stationApiId: number): string {
   return `station${stationApiId}`;

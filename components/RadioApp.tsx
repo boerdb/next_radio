@@ -26,7 +26,7 @@ export function RadioApp() {
   } = useRadioPlayer();
 
   return (
-    <motion className="flex h-dvh flex-col bg-[var(--background)]">
+    <div className="flex h-dvh flex-col bg-[var(--background)]">
       <AppHeader />
       <PwaUpdateBanner />
       <IosInstallBanner />
@@ -53,6 +53,6 @@ export function RadioApp() {
         onToggleMute={toggleMute}
         onVolumeChange={changeVolume}
       />
-    </motion>
+    </div>
   );
 }

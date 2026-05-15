@@ -40,7 +40,7 @@ export function StationList({
         Kies een station
       </h3>
       <ul
-        className={`scrollbar-themed flex flex-col gap-2 overflow-y-auto${scrolling ? " is-scrolling" : ""}`}
+        className={`scrollbar-themed flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-y-contain${scrolling ? " is-scrolling" : ""}`}
         onScroll={handleScroll}
       >
         {stations.map((station) => {

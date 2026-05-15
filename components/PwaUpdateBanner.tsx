@@ -8,23 +8,23 @@ export function PwaUpdateBanner() {
   if (!updateAvailable) return null;
 
   return (
-    <motion
+    <div
       className="pwa-update-banner mx-4 mt-2 shrink-0 rounded-xl border border-[var(--secondary)]/40 bg-[var(--card)] p-4 shadow-lg shadow-black/30"
       role="region"
       aria-label="Nieuwe versie beschikbaar"
     >
-      <motion className="mb-3 flex items-start justify-between gap-3">
-        <motion className="flex items-center gap-3">
-          <motion className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--secondary)]/20 text-[var(--secondary)]">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--secondary)]/20 text-[var(--secondary)]">
             <UpdateIcon />
-          </motion>
-          <motion>
+          </div>
+          <div>
             <p className="font-semibold text-white">Nieuwe versie beschikbaar</p>
             <p className="text-xs text-[var(--text-muted)]">
               Vernieuw de app om de laatste verbeteringen te gebruiken
             </p>
-          </motion>
-        </motion>
+          </div>
+        </div>
         <button
           type="button"
           onClick={dismissUpdate}
@@ -33,9 +33,9 @@ export function PwaUpdateBanner() {
         >
           <CloseIcon />
         </button>
-      </motion>
+      </div>
 
-      <motion className="flex gap-2">
+      <div className="flex gap-2">
         <button
           type="button"
           onClick={applyUpdate}
@@ -50,8 +50,8 @@ export function PwaUpdateBanner() {
         >
           Later
         </button>
-      </motion>
-    </motion>
+      </div>
+    </div>
   );
 }
 
