@@ -7,6 +7,14 @@ const ART_CACHE_MAX = 120;
 
 const artCache = new Map<string, { url: string; expires: number }>();
 
+function normalizeArtworkUrl(url: string | null | undefined): string | null {
+  const value = url?.trim();
+  if (!value) return null;
+  if (value.startsWith("//")) return `https:${value}`;
+  if (value.startsWith("http://")) return `https://${value.slice("http://".length)}`;
+  return value;
+}
+
 function getCachedArtwork(artist: string, title: string): string | null {
   const key = trackArtKey(artist, title);
   const entry = artCache.get(key);
@@ -53,7 +61,7 @@ export async function lookupItunesCoverArt(
     };
     const art = data.results?.[0]?.artworkUrl100;
     if (!art) return null;
-    return art.replace("100x100bb", "600x600bb");
+    return normalizeArtworkUrl(art.replace("100x100bb", "600x600bb"));
   } catch {
     return null;
   }
@@ -100,7 +108,7 @@ export async function lookupMusicBrainzCoverArt(
     const front = artData.images?.find((img) => img.front) ?? artData.images?.[0];
     if (!front) return null;
 
-    return (
+    return normalizeArtworkUrl(
       front.thumbnails?.large ??
       front.image ??
       front.thumbnails?.small ??
@@ -136,16 +144,24 @@ export async function resolveArtwork(
   azuraArt?: string | null,
   fallback?: string | null,
 ): Promise<string | null> {
-  if (azuraArt && !isGenericAzuraArt(azuraArt)) {
-    setCachedArtwork(artist, title, azuraArt);
-    return azuraArt;
+  const normalizedFallback = normalizeArtworkUrl(fallback);
+  const normalizedAzuraArt = normalizeArtworkUrl(azuraArt);
+
+  if (normalizedAzuraArt && !isGenericAzuraArt(normalizedAzuraArt)) {
+    setCachedArtwork(artist, title, normalizedAzuraArt);
+    return normalizedAzuraArt;
   }
 
   const cached = getCachedArtwork(artist, title);
-  if (cached) return cached;
+  if (cached && cached !== normalizedFallback) return cached;
+  if (cached && cached === normalizedFallback) {
+    artCache.delete(trackArtKey(artist, title));
+  }
 
   const generic = await findGenericCoverArt(artist, title);
-  const resolved = generic ?? fallback ?? null;
-  setCachedArtwork(artist, title, resolved);
+  const resolved = normalizeArtworkUrl(generic) ?? normalizedFallback ?? null;
+  if (generic && resolved) {
+    setCachedArtwork(artist, title, resolved);
+  }
   return resolved;
 }

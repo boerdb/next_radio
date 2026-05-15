@@ -164,6 +164,10 @@ export function useRadioPlayer() {
           url = "/api/npo-metadata";
         }
 
+        // Avoid stale API responses from browser/service-worker caches.
+        const separator = url.includes("?") ? "&" : "?";
+        url = `${url}${separator}_=${Date.now()}`;
+
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as NowPlaying | null;
