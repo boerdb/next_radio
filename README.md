@@ -33,7 +33,7 @@ npm run build
 npm start
 ```
 
-De app draait standaard op poort **3000**. Gebruik nginx/Caddy als reverse proxy met HTTPS (vereist voor PWA).
+De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS (vereist voor PWA).
 
 ### Omgevingsvariabelen
 
@@ -42,16 +42,41 @@ De app draait standaard op poort **3000**. Gebruik nginx/Caddy als reverse proxy
 | `OPENWEATHER_API_KEY` | Aanbevolen | OpenWeather API-key voor weer Harlingen |
 | `NEXT_PUBLIC_AZURACAST_URL` | Nee | Standaard `https://benswebradio.nl` |
 
-### PM2 (optioneel)
+### PM2 (poort 3002)
 
 ```bash
 npm run build
-pm2 start npm --name bens-music -- start
+pm2 start ecosystem.config.cjs
 pm2 save
+pm2 startup   # eenmalig: autostart na reboot
+```
+
+Handige commando’s:
+
+```bash
+pm2 status
+pm2 logs bens-music
+pm2 restart bens-music
+pm2 stop bens-music
+```
+
+**Nginx-voorbeeld** (proxy naar poort 3002):
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3002;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection 'upgrade';
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
 ```
 
 ## Scripts
 
 - `npm run dev` – development
 - `npm run build` – productie-build (inclusief PWA service worker)
-- `npm start` – productie-server
+- `npm start` – productie-server (poort 3002)
