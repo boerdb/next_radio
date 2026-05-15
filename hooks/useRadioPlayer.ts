@@ -12,11 +12,20 @@ import {
 } from "@/lib/mediaSession";
 import type { NowPlaying, Station } from "@/lib/types";
 
-const METADATA_POLL_MS = 12000;
+const METADATA_POLL_MS = 5000;
+/** Korte pauze bij trackwissel zodat jingle-metadata niet flitst. */
+const TRACK_CHANGE_DELAY_MS = 2500;
+
+function isSameTrack(a: NowPlaying, b: NowPlaying): boolean {
+  return a.artist === b.artist && a.title === b.title;
+}
 
 export function useRadioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const nowPlayingRef = useRef<NowPlaying | null>(null);
+  const trackChangeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingTrackRef = useRef<NowPlaying | null>(null);
 
   const [currentStation, setCurrentStation] = useState<Station | null>(null);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
@@ -63,28 +72,72 @@ export function useRadioPlayer() {
   }, [volume, muted]);
 
   useEffect(() => {
+    nowPlayingRef.current = nowPlaying;
+  }, [nowPlaying]);
+
+  useEffect(() => {
     updateMediaSession(nowPlaying, currentStation?.name ?? "Bens Music", isPlaying);
   }, [nowPlaying, currentStation, isPlaying]);
 
-  const fetchMetadata = useCallback(async (station: Station) => {
-    try {
-      let url: string;
-      if (isAzuracastStation(station.stationApiId)) {
-        url = `/api/now-playing?station=${getStationShortcode(station.stationApiId)}`;
-      } else if (station.id === "live") {
-        url = "/api/live-metadata";
-      } else {
-        url = "/api/npo-metadata";
+  const clearTrackChangeTimer = useCallback(() => {
+    if (trackChangeTimerRef.current) {
+      clearTimeout(trackChangeTimerRef.current);
+      trackChangeTimerRef.current = null;
+    }
+    pendingTrackRef.current = null;
+  }, []);
+
+  const applyMetadata = useCallback(
+    (data: NowPlaying) => {
+      const current = nowPlayingRef.current;
+
+      if (!current || isSameTrack(current, data)) {
+        clearTrackChangeTimer();
+        setNowPlaying((prev) =>
+          prev && isSameTrack(prev, data)
+            ? { ...data, art: data.art ?? prev.art }
+            : data,
+        );
+        return;
       }
 
-      const res = await fetch(url, { cache: "no-store" });
-      if (!res.ok) return;
-      const data = (await res.json()) as NowPlaying | null;
-      if (data) setNowPlaying(data);
-    } catch {
-      /* ignore poll errors */
-    }
-  }, []);
+      pendingTrackRef.current = data;
+      if (trackChangeTimerRef.current) {
+        clearTimeout(trackChangeTimerRef.current);
+      }
+      trackChangeTimerRef.current = setTimeout(() => {
+        if (pendingTrackRef.current) {
+          setNowPlaying(pendingTrackRef.current);
+        }
+        pendingTrackRef.current = null;
+        trackChangeTimerRef.current = null;
+      }, TRACK_CHANGE_DELAY_MS);
+    },
+    [clearTrackChangeTimer],
+  );
+
+  const fetchMetadata = useCallback(
+    async (station: Station) => {
+      try {
+        let url: string;
+        if (isAzuracastStation(station.stationApiId)) {
+          url = `/api/now-playing?station=${getStationShortcode(station.stationApiId)}`;
+        } else if (station.id === "live") {
+          url = "/api/live-metadata";
+        } else {
+          url = "/api/npo-metadata";
+        }
+
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as NowPlaying | null;
+        if (data) applyMetadata(data);
+      } catch {
+        /* ignore poll errors */
+      }
+    },
+    [applyMetadata],
+  );
 
   const startPolling = useCallback(
     (station: Station) => {
@@ -105,6 +158,7 @@ export function useRadioPlayer() {
         return;
       }
 
+      clearTrackChangeTimer();
       setCurrentStation(station);
       setLoading(true);
 
@@ -131,7 +185,7 @@ export function useRadioPlayer() {
         setLoading(false);
       }
     },
-    [currentStation, isPlaying, nowPlaying, startPolling],
+    [clearTrackChangeTimer, currentStation, isPlaying, nowPlaying, startPolling],
   );
 
   const togglePause = useCallback(() => {
@@ -157,6 +211,11 @@ export function useRadioPlayer() {
   useEffect(() => {
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
+      if (trackChangeTimerRef.current) {
+        clearTimeout(trackChangeTimerRef.current);
+        trackChangeTimerRef.current = null;
+      }
+      pendingTrackRef.current = null;
     };
   }, []);
 

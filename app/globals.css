@@ -52,3 +52,34 @@ input[type="range"] {
 .station-item:active {
   transform: scale(0.98);
 }
+
+.scrollbar-themed {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.scrollbar-themed::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-themed::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-themed::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.25s ease;
+}
+
+.scrollbar-themed.is-scrolling {
+  scrollbar-color: var(--border) transparent;
+}
+
+.scrollbar-themed.is-scrolling::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.scrollbar-themed.is-scrolling::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

@@ -8,9 +8,15 @@ const withPWA = withPWAInit({
   fallbacks: {
     document: "/offline",
   },
+  workboxOptions: {
+    skipWaiting: false,
+    clientsClaim: true,
+  },
 });
 
 const nextConfig: NextConfig = {
+  // HMR / dev assets when testing on phone via LAN IP (e.g. http://192.168.1.120:3000)
+  allowedDevOrigins: ["192.168.1.120", "192.168.*"],
   turbopack: {},
   images: {
     remotePatterns: [

@@ -3,6 +3,8 @@ import { resolveArtwork } from "@/lib/artwork";
 import { AZURACAST_BASE } from "@/lib/stations";
 import type { NowPlaying } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   const stationId = request.nextUrl.searchParams.get("station");
   if (!stationId || !/^station[1-3]$/.test(stationId)) {
@@ -10,10 +12,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(
-      `${AZURACAST_BASE}/api/nowplaying/${stationId}`,
-      { next: { revalidate: 5 } },
-    );
+    const res = await fetch(`${AZURACAST_BASE}/api/nowplaying/${stationId}`, {
+      cache: "no-store",
+    });
     if (!res.ok) {
       return NextResponse.json({ error: "Azuracast unavailable" }, { status: 502 });
     }

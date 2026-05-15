@@ -1,7 +1,9 @@
 "use client";
 
 import { AppHeader } from "./AppHeader";
+import { AndroidInstallBanner } from "./AndroidInstallBanner";
 import { IosInstallBanner } from "./IosInstallBanner";
+import { PwaUpdateBanner } from "./PwaUpdateBanner";
 import { NowPlayingCard } from "./NowPlayingCard";
 import { PlayerBar } from "./PlayerBar";
 import { StationList } from "./StationList";
@@ -24,9 +26,11 @@ export function RadioApp() {
   } = useRadioPlayer();
 
   return (
-    <div className="flex h-dvh flex-col bg-[var(--background)]">
+    <motion className="flex h-dvh flex-col bg-[var(--background)]">
       <AppHeader />
+      <PwaUpdateBanner />
       <IosInstallBanner />
+      <AndroidInstallBanner />
       <WeatherWidget />
       <NowPlayingCard
         station={currentStation}
@@ -49,6 +53,6 @@ export function RadioApp() {
         onToggleMute={toggleMute}
         onVolumeChange={changeVolume}
       />
-    </div>
+    </motion>
   );
 }

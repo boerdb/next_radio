@@ -1,14 +1,8 @@
-const DISMISS_KEY = "bens-music-ios-install-dismissed";
+import { isStandalonePwa } from "@/lib/pwa";
 
-export function isStandalonePwa(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    // Safari iOS legacy
-    ("standalone" in navigator &&
-      (navigator as Navigator & { standalone?: boolean }).standalone === true)
-  );
-}
+export { isStandalonePwa };
+
+const DISMISS_KEY = "bens-music-ios-install-dismissed";
 
 export function isIosDevice(): boolean {
   if (typeof navigator === "undefined") return false;

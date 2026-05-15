@@ -79,6 +79,8 @@ export async function findGenericCoverArt(
   return lookupMusicBrainzCoverArt(artist, title);
 }
 
+const ARTWORK_LOOKUP_TIMEOUT_MS = 2000;
+
 export async function resolveArtwork(
   artist: string,
   title: string,
@@ -88,6 +90,13 @@ export async function resolveArtwork(
   if (azuraArt && !isGenericAzuraArt(azuraArt)) {
     return azuraArt;
   }
-  const generic = await findGenericCoverArt(artist, title);
+
+  const generic = await Promise.race([
+    findGenericCoverArt(artist, title),
+    new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), ARTWORK_LOOKUP_TIMEOUT_MS),
+    ),
+  ]);
+
   return generic ?? fallback ?? null;
 }
