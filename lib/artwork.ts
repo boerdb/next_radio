@@ -180,20 +180,21 @@ export async function resolveArtwork(
 ): Promise<string | null> {
   const normalizedFallback = normalizeArtworkUrl(fallback);
   const normalizedAzuraArt = normalizeArtworkUrl(azuraArt);
-
-  if (normalizedAzuraArt && !isGenericAzuraArt(normalizedAzuraArt)) {
-    setCachedArtwork(artist, title, normalizedAzuraArt);
-    return normalizedAzuraArt;
-  }
+  const usableAzuraArt =
+    normalizedAzuraArt && !isGenericAzuraArt(normalizedAzuraArt)
+      ? normalizedAzuraArt
+      : null;
 
   const cached = getCachedArtwork(artist, title);
-  if (cached && cached !== normalizedFallback) return cached;
-  if (cached && cached === normalizedFallback) {
+  if (cached && cached !== normalizedFallback && cached !== usableAzuraArt) {
+    return cached;
+  }
+  if (cached && (cached === normalizedFallback || cached === usableAzuraArt)) {
     artCache.delete(trackArtKey(artist, title));
   }
 
   const generic = await findGenericCoverArt(artist, title);
-  const resolved = normalizeArtworkUrl(generic) ?? normalizedFallback ?? null;
+  const resolved = normalizeArtworkUrl(generic) ?? usableAzuraArt ?? normalizedFallback ?? null;
   if (generic && resolved) {
     setCachedArtwork(artist, title, resolved);
   }
