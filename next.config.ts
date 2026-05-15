@@ -11,6 +11,7 @@ const withPWA = withPWAInit({
   workboxOptions: {
     skipWaiting: false,
     clientsClaim: true,
+    importScripts: ["/pwa-sw-extras.js"],
   },
 });
 

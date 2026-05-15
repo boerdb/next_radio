@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const DISMISS_KEY = "bens-music-update-dismissed";
-const RELOAD_FALLBACK_MS = 4000;
+const APPLIED_SW_KEY = "bens-music-update-applied-sw";
+const RELOAD_FALLBACK_MS = 2500;
 
 function isUpdateDismissedThisSession(): boolean {
   try {
@@ -21,8 +22,32 @@ function markUpdateDismissed(): void {
   }
 }
 
+function wasWorkerUpdateApplied(scriptUrl: string): boolean {
+  try {
+    return sessionStorage.getItem(APPLIED_SW_KEY) === scriptUrl;
+  } catch {
+    return false;
+  }
+}
+
+function markWorkerUpdateApplied(scriptUrl: string): void {
+  try {
+    sessionStorage.setItem(APPLIED_SW_KEY, scriptUrl);
+  } catch {
+    /* ignore */
+  }
+}
+
 function shouldOfferUpdate(reg: ServiceWorkerRegistration): boolean {
-  return Boolean(reg.waiting && navigator.serviceWorker.controller);
+  const waiting = reg.waiting;
+  if (!waiting || !navigator.serviceWorker.controller) return false;
+  if (isUpdateDismissedThisSession()) return false;
+  if (wasWorkerUpdateApplied(waiting.scriptURL)) return false;
+  return true;
+}
+
+function hideUpdateBanner(setUpdateAvailable: (v: boolean) => void): void {
+  setUpdateAvailable(false);
 }
 
 export function usePwaUpdate() {
@@ -30,6 +55,7 @@ export function usePwaUpdate() {
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
   const refreshingRef = useRef(false);
   const reloadFallbackRef = useRef<number | undefined>(undefined);
+  const waitingListenerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) {
@@ -43,17 +69,32 @@ export function usePwaUpdate() {
       }
     };
 
-    const onControllerChange = () => {
+    const clearWaitingListener = () => {
+      waitingListenerRef.current?.();
+      waitingListenerRef.current = null;
+    };
+
+    const reloadForUpdate = () => {
       if (!refreshingRef.current) return;
       clearReloadFallback();
+      clearWaitingListener();
       window.location.reload();
+    };
+
+    const onControllerChange = () => {
+      reloadForUpdate();
     };
 
     const checkForUpdate = (reg: ServiceWorkerRegistration) => {
       registrationRef.current = reg;
-      if (shouldOfferUpdate(reg) && !isUpdateDismissedThisSession()) {
+      if (refreshingRef.current) return;
+
+      if (shouldOfferUpdate(reg)) {
         setUpdateAvailable(true);
+        return;
       }
+
+      hideUpdateBanner(setUpdateAvailable);
     };
 
     const trackInstalling = (
@@ -88,7 +129,7 @@ export function usePwaUpdate() {
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
       const reg = registrationRef.current;
-      if (!reg) return;
+      if (!reg || refreshingRef.current) return;
       void reg.update().then(() => checkForUpdate(reg));
     };
 
@@ -96,12 +137,13 @@ export function usePwaUpdate() {
 
     const interval = window.setInterval(() => {
       const reg = registrationRef.current;
-      if (!reg) return;
+      if (!reg || refreshingRef.current) return;
       void reg.update().then(() => checkForUpdate(reg));
     }, 60 * 60 * 1000);
 
     return () => {
       clearReloadFallback();
+      clearWaitingListener();
       navigator.serviceWorker.removeEventListener(
         "controllerchange",
         onControllerChange,
@@ -111,17 +153,7 @@ export function usePwaUpdate() {
     };
   }, []);
 
-  const applyUpdate = useCallback(() => {
-    const reg = registrationRef.current;
-    const waiting = reg?.waiting;
-    if (!waiting) {
-      window.location.reload();
-      return;
-    }
-
-    refreshingRef.current = true;
-    waiting.postMessage({ type: "SKIP_WAITING" });
-
+  const scheduleReloadFallback = useCallback(() => {
     if (reloadFallbackRef.current) {
       window.clearTimeout(reloadFallbackRef.current);
     }
@@ -131,9 +163,40 @@ export function usePwaUpdate() {
     }, RELOAD_FALLBACK_MS);
   }, []);
 
+  const applyUpdate = useCallback(() => {
+    const reg = registrationRef.current;
+    const waiting = reg?.waiting;
+
+    markUpdateDismissed();
+    hideUpdateBanner(setUpdateAvailable);
+
+    if (!waiting) {
+      window.location.reload();
+      return;
+    }
+
+    markWorkerUpdateApplied(waiting.scriptURL);
+    refreshingRef.current = true;
+
+    const onWaitingStateChange = () => {
+      if (waiting.state === "activated") {
+        window.location.reload();
+      }
+    };
+    waiting.addEventListener("statechange", onWaitingStateChange);
+    waitingListenerRef.current = () => {
+      waiting.removeEventListener("statechange", onWaitingStateChange);
+    };
+
+    waiting.postMessage({ type: "SKIP_WAITING" });
+    scheduleReloadFallback();
+  }, [scheduleReloadFallback]);
+
   const dismissUpdate = useCallback(() => {
     markUpdateDismissed();
-    setUpdateAvailable(false);
+    const waiting = registrationRef.current?.waiting;
+    if (waiting) markWorkerUpdateApplied(waiting.scriptURL);
+    hideUpdateBanner(setUpdateAvailable);
   }, []);
 
   return { updateAvailable, applyUpdate, dismissUpdate };

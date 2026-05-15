@@ -10,6 +10,12 @@ import {
   setupMediaSessionHandlers,
   updateMediaSession,
 } from "@/lib/mediaSession";
+import {
+  recallStationSnapshot,
+  rememberStationSnapshot,
+  rememberTrackArt,
+  withRecalledArt,
+} from "@/lib/nowPlayingSessionCache";
 import type { NowPlaying, Station } from "@/lib/types";
 
 const METADATA_POLL_MS = 5000;
@@ -88,14 +94,25 @@ export function useRadioPlayer() {
   }, []);
 
   const enrichArt = useCallback(
-    (data: NowPlaying, station: Station, prev?: NowPlaying | null) => ({
-      ...data,
-      art:
-        data.art ??
-        (prev && isSameTrack(prev, data) ? prev.art : null) ??
-        station.defaultArt ??
-        null,
-    }),
+    (data: NowPlaying, station: Station, prev?: NowPlaying | null) => {
+      const withCache = withRecalledArt(data);
+      return {
+        ...withCache,
+        art:
+          withCache.art ??
+          (prev && isSameTrack(prev, withCache) ? prev.art : null) ??
+          station.defaultArt ??
+          null,
+      };
+    },
+    [],
+  );
+
+  const persistNowPlaying = useCallback(
+    (station: Station, data: NowPlaying) => {
+      if (data.art) rememberTrackArt(data.artist, data.title, data.art);
+      rememberStationSnapshot(station.id, data);
+    },
     [],
   );
 
@@ -106,11 +123,14 @@ export function useRadioPlayer() {
 
       if (!current || isSameTrack(current, enriched)) {
         clearTrackChangeTimer();
-        setNowPlaying((prev) =>
-          prev && isSameTrack(prev, enriched)
-            ? enrichArt(enriched, station, prev)
-            : enriched,
-        );
+        setNowPlaying((prev) => {
+          const next =
+            prev && isSameTrack(prev, enriched)
+              ? enrichArt(enriched, station, prev)
+              : enriched;
+          persistNowPlaying(station, next);
+          return next;
+        });
         return;
       }
 
@@ -120,13 +140,15 @@ export function useRadioPlayer() {
       }
       trackChangeTimerRef.current = setTimeout(() => {
         if (pendingTrackRef.current) {
-          setNowPlaying(pendingTrackRef.current);
+          const next = pendingTrackRef.current;
+          persistNowPlaying(station, next);
+          setNowPlaying(next);
         }
         pendingTrackRef.current = null;
         trackChangeTimerRef.current = null;
       }, TRACK_CHANGE_DELAY_MS);
     },
-    [clearTrackChangeTimer, enrichArt],
+    [clearTrackChangeTimer, enrichArt, persistNowPlaying],
   );
 
   const fetchMetadata = useCallback(
@@ -178,7 +200,10 @@ export function useRadioPlayer() {
       const separator = station.streamUrl.includes("?") ? "&" : "?";
       audio.src = `${station.streamUrl}${separator}nocache=${Date.now()}`;
 
-      if (!nowPlaying || currentStation?.id !== station.id) {
+      const cached = recallStationSnapshot(station.id);
+      if (cached) {
+        setNowPlaying(enrichArt(cached, station));
+      } else if (!nowPlaying || currentStation?.id !== station.id) {
         setNowPlaying({
           artist: station.name,
           title: "Verbinden...",
@@ -198,7 +223,7 @@ export function useRadioPlayer() {
         setLoading(false);
       }
     },
-    [clearTrackChangeTimer, currentStation, isPlaying, nowPlaying, startPolling],
+    [clearTrackChangeTimer, currentStation, enrichArt, isPlaying, nowPlaying, startPolling],
   );
 
   const togglePause = useCallback(() => {
