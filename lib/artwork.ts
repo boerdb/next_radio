@@ -15,6 +15,37 @@ function normalizeArtworkUrl(url: string | null | undefined): string | null {
   return value;
 }
 
+function cleanLookupText(input: string): string {
+  return input
+    .replace(/\[[^\]]*\]/g, " ")
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/\b(remaster(?:ed)?|version|edit|mono|stereo)\b/gi, " ")
+    .replace(/[\s_-]{2,}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildLookupCandidates(artist: string, title: string): Array<{ artist: string; title: string }> {
+  const rawArtist = artist.trim();
+  const rawTitle = title.trim();
+  const cleanArtist = cleanLookupText(rawArtist);
+  const cleanTitle = cleanLookupText(rawTitle);
+
+  const candidates: Array<{ artist: string; title: string }> = [];
+  const seen = new Set<string>();
+  const pushCandidate = (a: string, t: string) => {
+    const key = trackArtKey(a, t);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    candidates.push({ artist: a, title: t });
+  };
+
+  pushCandidate(rawArtist, rawTitle);
+  pushCandidate(rawArtist, cleanTitle);
+  pushCandidate(cleanArtist, cleanTitle);
+  return candidates.filter((c) => c.artist || c.title);
+}
+
 function getCachedArtwork(artist: string, title: string): string | null {
   const key = trackArtKey(artist, title);
   const entry = artCache.get(key);
@@ -125,14 +156,17 @@ export async function findGenericCoverArt(
 ): Promise<string | null> {
   if (!artist.trim() && !title.trim()) return null;
 
-  const [itunes, musicBrainz] = await Promise.allSettled([
-    lookupItunesCoverArt(artist, title),
-    lookupMusicBrainzCoverArt(artist, title),
-  ]);
+  const candidates = buildLookupCandidates(artist, title);
+  for (const candidate of candidates) {
+    const [itunes, musicBrainz] = await Promise.allSettled([
+      lookupItunesCoverArt(candidate.artist, candidate.title),
+      lookupMusicBrainzCoverArt(candidate.artist, candidate.title),
+    ]);
 
-  if (itunes.status === "fulfilled" && itunes.value) return itunes.value;
-  if (musicBrainz.status === "fulfilled" && musicBrainz.value) {
-    return musicBrainz.value;
+    if (itunes.status === "fulfilled" && itunes.value) return itunes.value;
+    if (musicBrainz.status === "fulfilled" && musicBrainz.value) {
+      return musicBrainz.value;
+    }
   }
 
   return null;
