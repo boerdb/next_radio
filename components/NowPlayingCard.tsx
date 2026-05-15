@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { APP_ICON, isAppIconArt } from "@/lib/appIcon";
 import type { NowPlaying, Station } from "@/lib/types";
-
-const APP_ICON = "/icons/icon-512.png";
 
 interface NowPlayingCardProps {
   station: Station | null;
@@ -12,13 +12,24 @@ interface NowPlayingCardProps {
   loading?: boolean;
 }
 
+function resolveCoverSrc(
+  art: string | null | undefined,
+  station: Station | null,
+  loading: boolean,
+): string {
+  const hasRealArt = art && !isAppIconArt(art);
+  if (loading && !hasRealArt) return APP_ICON;
+  return art ?? station?.defaultArt ?? APP_ICON;
+}
+
 export function NowPlayingCard({
   station,
   nowPlaying,
   isPlaying,
   loading = false,
 }: NowPlayingCardProps) {
-  const art = nowPlaying?.art ?? station?.defaultArt ?? "/icons/icon-192.png";
+  const art = nowPlaying?.art ?? station?.defaultArt ?? null;
+  const coverSrc = resolveCoverSrc(art, station, loading);
   const artist = nowPlaying?.artist ?? station?.name ?? "Kies een station";
   const title = nowPlaying?.title ?? (station ? "Klik om te luisteren" : "");
   const progress =
@@ -28,32 +39,48 @@ export function NowPlayingCard({
   const showLiveBadge =
     isPlaying && (station?.id === "live" || nowPlaying?.isLive);
 
+  const [displayedSrc, setDisplayedSrc] = useState<string | null>(null);
+  const swapTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const lastCoverRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!coverSrc) {
+      lastCoverRef.current = null;
+      setDisplayedSrc(null);
+      return;
+    }
+
+    if (coverSrc === lastCoverRef.current) return;
+    lastCoverRef.current = coverSrc;
+
+    if (swapTimeoutRef.current) clearTimeout(swapTimeoutRef.current);
+
+    setDisplayedSrc(null);
+    swapTimeoutRef.current = setTimeout(() => {
+      setDisplayedSrc(coverSrc);
+    }, 35);
+
+    return () => {
+      if (swapTimeoutRef.current) clearTimeout(swapTimeoutRef.current);
+    };
+  }, [coverSrc]);
+
   return (
     <section className="flex shrink-0 flex-col items-center px-4 pb-4 pt-2">
       <div className="relative mb-4 aspect-square w-full max-w-[280px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40">
-        <Image
-          src={art}
-          alt={`${artist} - ${title}`}
-          fill
-          className={`object-cover rounded-2xl transition-opacity duration-300 ${loading ? "opacity-25" : "opacity-100"}`}
-          sizes="280px"
-          priority
-          unoptimized={art.startsWith("http")}
-        />
-        {loading && (
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            aria-hidden
-          >
-            <Image
-              src={APP_ICON}
-              alt=""
-              width={160}
-              height={160}
-              className="rounded-2xl animate-pulse drop-shadow-lg"
-              priority
-            />
-          </div>
+        {displayedSrc ? (
+          <Image
+            key={displayedSrc}
+            src={displayedSrc}
+            alt={`${artist} - ${title}`}
+            fill
+            className="album-art-enter object-cover rounded-2xl"
+            sizes="280px"
+            priority
+            unoptimized={displayedSrc.startsWith("http")}
+          />
+        ) : (
+          <div className="h-full w-full rounded-2xl bg-[var(--card)]" aria-hidden />
         )}
         {showLiveBadge && !loading && (
           <span className="absolute bottom-2 right-2 rounded-full bg-[var(--primary)] px-2 py-0.5 text-xs font-medium text-white">

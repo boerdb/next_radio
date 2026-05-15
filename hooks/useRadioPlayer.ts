@@ -10,6 +10,7 @@ import {
   setupMediaSessionHandlers,
   updateMediaSession,
 } from "@/lib/mediaSession";
+import { loadingPlaceholder } from "@/lib/appIcon";
 import {
   recallStationSnapshot,
   rememberStationSnapshot,
@@ -203,16 +204,8 @@ export function useRadioPlayer() {
       const cached = recallStationSnapshot(station.id);
       if (cached) {
         setNowPlaying(enrichArt(cached, station));
-      } else if (!nowPlaying || currentStation?.id !== station.id) {
-        setNowPlaying({
-          artist: station.name,
-          title: "Verbinden...",
-          art: station.defaultArt ?? null,
-          elapsed: 0,
-          duration: 0,
-          listeners: 0,
-          isLive: station.id === "live",
-        });
+      } else {
+        setNowPlaying(loadingPlaceholder(station));
       }
 
       startPolling(station);
