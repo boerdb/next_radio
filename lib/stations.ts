@@ -47,7 +47,39 @@ export const STATIONS: Station[] = [
     streamUrl: NPO_STREAM_URL,
     defaultArt: `${AZURACAST_BASE}/static/uploads/station3/album_art.1772217617.jpg`,
   },
+  {
+    id: "truernb181",
+    stationApiId: 0,
+    name: "181.fm True R&B",
+    streamUrl: "https://listen.181fm.com/181-rnb_128k.mp3",
+    defaultArt: `${AZURACAST_BASE}/static/uploads/station3/album_art.1772217617.jpg`,
+  },
+  {
+    id: "gotradio-rnb",
+    stationApiId: 0,
+    name: "GotRadio R&B Classics",
+    streamUrl: "https://pureplay.cdnstream1.com/6023_128.mp3",
+    defaultArt: `${AZURACAST_BASE}/static/uploads/station3/album_art.1772217617.jpg`,
+  },
+  {
+    id: "gotradio-urban",
+    stationApiId: 0,
+    name: "Urban Lounge",
+    streamUrl: "https://pureplay.cdnstream1.com/6053_128.mp3",
+    defaultArt: `${AZURACAST_BASE}/static/uploads/station3/album_art.1772217617.jpg`,
+  },
 ];
+
+const ICY_METADATA_STATION_IDS = new Set([
+  "nposoul",
+  "truernb181",
+  "gotradio-rnb",
+  "gotradio-urban",
+]);
+
+export function usesIcyStreamMetadata(stationId: string): boolean {
+  return ICY_METADATA_STATION_IDS.has(stationId);
+}
 
 export function getStationByShortcode(shortcode: string): Station | undefined {
   const match = /^station(\d)$/.exec(shortcode);

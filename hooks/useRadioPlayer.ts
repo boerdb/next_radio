@@ -5,6 +5,7 @@ import {
   getStationShortcode,
   isAzuracastStation,
   STATIONS,
+  usesIcyStreamMetadata,
 } from "@/lib/stations";
 import {
   setupMediaSessionHandlers,
@@ -160,8 +161,10 @@ export function useRadioPlayer() {
           url = `/api/now-playing?station=${getStationShortcode(station.stationApiId)}`;
         } else if (station.id === "live") {
           url = "/api/live-metadata";
+        } else if (usesIcyStreamMetadata(station.id)) {
+          url = `/api/icy-metadata?id=${encodeURIComponent(station.id)}`;
         } else {
-          url = "/api/npo-metadata";
+          return;
         }
 
         // Avoid stale API responses from browser/service-worker caches.

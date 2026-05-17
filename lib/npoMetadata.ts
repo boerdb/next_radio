@@ -25,16 +25,16 @@ export function parseArtistTitle(raw: string): { artist: string; title: string }
   return { artist: "", title: text };
 }
 
-let cachedTitle: { value: string; at: number } | null = null;
+const icyTitleCache = new Map<string, { value: string; at: number }>();
 const CACHE_MS = 15_000;
 
-export async function fetchNpoStreamTitle(): Promise<string> {
-  if (cachedTitle && Date.now() - cachedTitle.at < CACHE_MS) {
-    return cachedTitle.value;
+export async function fetchIcyStreamTitle(streamUrl: string): Promise<string> {
+  const cached = icyTitleCache.get(streamUrl);
+  if (cached && Date.now() - cached.at < CACHE_MS) {
+    return cached.value;
   }
-  const { NPO_STREAM_URL } = await import("./stations");
 
-  const res = await fetch(NPO_STREAM_URL, {
+  const res = await fetch(streamUrl, {
     headers: {
       "Icy-MetaData": "1",
       "User-Agent": "BensMusicPWA/1.0 (https://benswebradio.nl)",
@@ -82,6 +82,11 @@ export async function fetchNpoStreamTitle(): Promise<string> {
   const streamTitle = parseStreamTitleFromIcyBlock(
     combined.subarray(metaInt + 1, metaInt + 1 + metaLen),
   );
-  cachedTitle = { value: streamTitle, at: Date.now() };
+  icyTitleCache.set(streamUrl, { value: streamTitle, at: Date.now() });
   return streamTitle;
+}
+
+export async function fetchNpoStreamTitle(): Promise<string> {
+  const { NPO_STREAM_URL } = await import("./stations");
+  return fetchIcyStreamTitle(NPO_STREAM_URL);
 }
