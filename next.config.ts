@@ -27,6 +27,22 @@ const withPWA = withPWAInit({
           cacheName: "apis",
         },
       },
+      {
+        // Never cache radio streams (long-lived ICY connections break with SW caches).
+        urlPattern: ({ url }: { url: URL }) => {
+          const host = url.hostname;
+          if (host === "stream.benswebradio.nl") return true;
+          if (host === "benswebradio.nl" && url.pathname.startsWith("/listen/")) return true;
+          if (host === "icecast.omroep.nl") return true;
+          if (host.endsWith("181fm.com") || host.includes("cdnstream1.com")) return true;
+          return false;
+        },
+        handler: "NetworkOnly",
+        method: "GET",
+        options: {
+          cacheName: "radio-streams",
+        },
+      },
     ],
   },
   extendDefaultRuntimeCaching: true,

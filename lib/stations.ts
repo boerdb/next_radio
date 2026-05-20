@@ -37,7 +37,7 @@ export const STATIONS: Station[] = [
     id: "live",
     stationApiId: 4,
     name: "Bens Web Radio Live",
-    streamUrl: "https://stream.benswebradio.nl/live",
+    streamUrl: "https://stream.benswebradio.nl/live?type=.mp3",
     defaultArt: `${AZURACAST_BASE}/static/uploads/station1/album_art.1772232083.png`,
   },
   {
