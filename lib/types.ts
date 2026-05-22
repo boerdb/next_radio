@@ -23,4 +23,6 @@ export interface WeatherData {
   description: string;
   icon: string;
   windSpeed: number;
+  /** Unix ms when OpenWeather was last fetched (server cache miss). */
+  updatedAt?: number;
 }
