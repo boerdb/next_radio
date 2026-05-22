@@ -44,9 +44,11 @@ De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS
 
 ### PM2 (poort 3002)
 
+Zet `OPENWEATHER_API_KEY` in `.env.local` of `.env.production` in de projectmap (zelfde map als `package.json`). PM2 leest die bestanden via `ecosystem.config.cjs`.
+
 ```bash
 npm run build
-pm2 start ecosystem.config.cjs
+pm2 restart ecosystem.config.cjs --update-env
 pm2 save
 pm2 startup   # eenmalig: autostart na reboot
 ```

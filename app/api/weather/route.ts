@@ -11,10 +11,12 @@ export async function GET() {
   const weather = await fetchHarlingenWeather();
   if (!weather) {
     return NextResponse.json(
-      { error: "Weather unavailable. Set OPENWEATHER_API_KEY in .env.local" },
-      { status: 503 },
-      { headers: NO_CACHE_HEADERS },
+      {
+        error:
+          "Weer niet beschikbaar. Zet OPENWEATHER_API_KEY in .env.local of .env.production op de server.",
+      },
+      { status: 503, headers: NO_CACHE_HEADERS },
     );
   }
-  return NextResponse.json(weather, { headers: NO_CACHE_HEADERS });
+  return NextResponse.json(weather, { status: 200, headers: NO_CACHE_HEADERS });
 }
