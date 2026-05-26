@@ -41,6 +41,11 @@ De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS
 |-----------|-----------|--------------|
 | `OPENWEATHER_API_KEY` | Aanbevolen | OpenWeather API-key voor weer Harlingen |
 | `NEXT_PUBLIC_AZURACAST_URL` | Nee | Standaard `https://benswebradio.nl` |
+| `NEXT_PUBLIC_WEATHER_ICON_BASE_URL` | Nee | Eigen weericonen (static), zie `public/weather-icons/README.md` |
+
+### Publieke URL (Cloudflare tunnel)
+
+De app kan o.a. bereikbaar zijn op **https://app.benswebradio.nl** (tunnel naar je server). Zet daar HTTPS op (vereist voor PWA). Optionele weericonen: zelfde host, bv. `NEXT_PUBLIC_WEATHER_ICON_BASE_URL=https://app.benswebradio.nl/weather-icons` en bestanden in `public/weather-icons/`.
 
 ### PM2 (poort 3002)
 

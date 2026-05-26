@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useWeather } from "@/hooks/useWeather";
+import { WeatherIcon } from "./WeatherIcon";
 
 export function WeatherWidget() {
   const { weather, loading, error } = useWeather();
@@ -22,31 +22,29 @@ export function WeatherWidget() {
     );
   }
 
-  const iconUrl = `https://openweathermap.org/img/wn/${weather.icon}@2x.png`;
   const updatedLabel = formatWeatherAge(weather.updatedAt);
 
   return (
-    <div className="mx-4 mt-3 flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2.5">
-      <Image
-        src={iconUrl}
-        alt={weather.description}
-        width={40}
-        height={40}
-        unoptimized
+    <div className="mx-4 mt-3 grid grid-cols-[auto_1fr_auto] items-start gap-3 rounded-xl border border-[var(--border)] bg-[var(--card)] px-4 py-2.5">
+      <WeatherIcon
+        icon={weather.icon}
+        description={weather.description}
+        size={44}
+        className="mt-0.5"
       />
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0">
         <p className="text-xs uppercase tracking-wider text-[var(--text-muted)]">
           {weather.location}
         </p>
-        <p className="truncate text-sm capitalize text-white">
+        <p className="text-pretty text-sm capitalize leading-snug text-white">
           {weather.description}
         </p>
       </div>
-      <div className="text-right">
-        <p className="text-2xl font-bold text-[var(--secondary)]">
+      <div className="shrink-0 text-right">
+        <p className="text-2xl font-bold leading-none text-[var(--secondary)]">
           {weather.temp}°
         </p>
-        <p className="text-xs text-[var(--text-muted)]">
+        <p className="mt-1 max-w-[11rem] text-pretty text-right text-xs leading-snug text-[var(--text-muted)] sm:max-w-none">
           Voelt als {weather.feelsLike}° · Wind {weather.windSpeed} km/u
           {updatedLabel ? ` · ${updatedLabel}` : ""}
         </p>
