@@ -12,7 +12,10 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const streamTitle = await fetchNpoStreamTitle();
-    const { artist, title } = parseArtistTitle(streamTitle);
+    const { artist, title } = parseArtistTitle(streamTitle, {
+      defaultArtist: "NPO Soul & Jazz",
+      defaultTitle: "Live",
+    });
     const npoStation = getStationById("nposoul");
     const art = await resolveArtwork(
       artist,

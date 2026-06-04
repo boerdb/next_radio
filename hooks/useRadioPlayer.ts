@@ -313,7 +313,14 @@ export function useRadioPlayer() {
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as NowPlaying | null;
-        if (data) applyMetadata(data, station);
+        if (!data) return;
+        if (
+          station.id === "sublime" &&
+          /npo\s*soul/i.test(data.artist)
+        ) {
+          return;
+        }
+        applyMetadata(data, station);
       } catch {
         /* ignore poll errors */
       }

@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { resolveArtwork } from "@/lib/artwork";
-import { fetchIcyStreamTitle, parseArtistTitle } from "@/lib/npoMetadata";
+import {
+  fetchIcyStreamTitle,
+  isLikelyNonMusicIcyTitle,
+  parseArtistTitle,
+} from "@/lib/npoMetadata";
 import { getStationById } from "@/lib/stations";
 import type { NowPlaying } from "@/lib/types";
 
@@ -26,7 +30,15 @@ export async function GET(request: NextRequest) {
 
   try {
     const streamTitle = await fetchIcyStreamTitle(station.streamUrl);
-    const { artist, title } = parseArtistTitle(streamTitle);
+
+    if (isLikelyNonMusicIcyTitle(streamTitle, station.name)) {
+      return NextResponse.json(null);
+    }
+
+    const { artist, title } = parseArtistTitle(streamTitle, {
+      defaultArtist: station.name,
+      defaultTitle: "Live",
+    });
     const art = await resolveArtwork(
       artist,
       title,

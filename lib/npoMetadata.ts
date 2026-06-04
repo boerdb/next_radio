@@ -5,10 +5,21 @@ export function parseStreamTitleFromIcyBlock(buffer: Buffer): string {
   return match?.[1]?.replace(/\\'/g, "'").trim() ?? "";
 }
 
-export function parseArtistTitle(raw: string): { artist: string; title: string } {
+export type ParseArtistTitleFallback = {
+  defaultArtist?: string;
+  defaultTitle?: string;
+};
+
+export function parseArtistTitle(
+  raw: string,
+  fallback?: ParseArtistTitleFallback,
+): { artist: string; title: string } {
   const text = raw.trim();
   if (!text) {
-    return { artist: "NPO Soul & Jazz", title: "Live" };
+    return {
+      artist: fallback?.defaultArtist ?? "",
+      title: fallback?.defaultTitle ?? "Live",
+    };
   }
 
   const separators = [" - ", " – ", " — ", " | "];
@@ -23,6 +34,37 @@ export function parseArtistTitle(raw: string): { artist: string; title: string }
   }
 
   return { artist: "", title: text };
+}
+
+/** Lege titel, reclame of metadata van een ander station — niet tonen als “now playing”. */
+export function isLikelyNonMusicIcyTitle(
+  raw: string,
+  stationName: string,
+): boolean {
+  const text = raw.trim();
+  if (!text) return true;
+
+  const lower = text.toLowerCase();
+  const stationLower = stationName.toLowerCase();
+
+  if (
+    lower.includes("reclame") ||
+    lower.includes("advert") ||
+    lower.includes("commercial")
+  ) {
+    return true;
+  }
+
+  if (lower === stationLower) return true;
+
+  if (stationLower.includes("sublime") && lower.includes("npo soul")) {
+    return true;
+  }
+  if (stationLower.includes("npo") && lower.includes("sublime")) {
+    return true;
+  }
+
+  return false;
 }
 
 const icyTitleCache = new Map<string, { value: string; at: number }>();
