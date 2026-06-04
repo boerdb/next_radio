@@ -35,6 +35,8 @@ const withPWA = withPWAInit({
           if (host === "benswebradio.nl" && url.pathname.startsWith("/listen/")) return true;
           if (host === "icecast.omroep.nl") return true;
           if (host.endsWith("181fm.com") || host.includes("cdnstream1.com")) return true;
+          if (host.includes("streamtheworld.com")) return true;
+          if (host === "stream.sublime.nl") return true;
           return false;
         },
         handler: "NetworkOnly",

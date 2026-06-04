@@ -41,6 +41,15 @@ export const STATIONS: Station[] = [
     defaultArt: `${AZURACAST_BASE}/static/uploads/station1/album_art.1772232083.png`,
   },
   {
+    id: "sublime",
+    stationApiId: 0,
+    name: "Sublime FM",
+    streamUrl:
+      "https://playerservices.streamtheworld.com/api/livestream-redirect/SUBLIME.mp3?dist=sublime_website",
+    defaultArt:
+      "https://6nl7xj2ntppk.b-cdn.net/73cf20f2-a361-480b-bc2f-bec43b6a2bd5",
+  },
+  {
     id: "nposoul",
     stationApiId: 0,
     name: "NPO Soul & Jazz",
@@ -75,6 +84,7 @@ const ICY_METADATA_STATION_IDS = new Set([
   "truernb181",
   "gotradio-rnb",
   "gotradio-urban",
+  "sublime",
 ]);
 
 export function usesIcyStreamMetadata(stationId: string): boolean {
