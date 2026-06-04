@@ -11,7 +11,11 @@ import {
   setupMediaSessionHandlers,
   updateMediaSession,
 } from "@/lib/mediaSession";
-import { loadingPlaceholder } from "@/lib/appIcon";
+import {
+  isLoadingPlaceholder,
+  loadingPlaceholder,
+  stationLiveNowPlaying,
+} from "@/lib/appIcon";
 import {
   recallStationSnapshot,
   rememberStationSnapshot,
@@ -132,6 +136,12 @@ export function useRadioPlayer() {
       clearReconnectTimer();
       setIsPlaying(true);
       setLoading(false);
+      const station = currentStationRef.current;
+      if (station && isLoadingPlaceholder(nowPlayingRef.current)) {
+        const live = stationLiveNowPlaying(station);
+        nowPlayingRef.current = live;
+        setNowPlaying(live);
+      }
     };
     const onPause = () => setIsPlaying(false);
     const onWaiting = () => {
@@ -313,11 +323,19 @@ export function useRadioPlayer() {
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as NowPlaying | null;
-        if (!data) return;
+        if (!data) {
+          if (isLoadingPlaceholder(nowPlayingRef.current)) {
+            applyMetadata(stationLiveNowPlaying(station), station);
+          }
+          return;
+        }
         if (
           station.id === "sublime" &&
           /npo\s*soul/i.test(data.artist)
         ) {
+          if (isLoadingPlaceholder(nowPlayingRef.current)) {
+            applyMetadata(stationLiveNowPlaying(station), station);
+          }
           return;
         }
         applyMetadata(data, station);

@@ -31,6 +31,10 @@ export async function GET(request: NextRequest) {
   try {
     const streamTitle = await fetchIcyStreamTitle(station.streamUrl);
 
+    if (!streamTitle.trim()) {
+      return NextResponse.json(fallback);
+    }
+
     if (isLikelyNonMusicIcyTitle(streamTitle, station.name)) {
       return NextResponse.json(null);
     }

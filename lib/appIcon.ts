@@ -18,3 +18,20 @@ export function loadingPlaceholder(station: Station): NowPlaying {
     isLive: station.id === "live",
   };
 }
+
+export function isLoadingPlaceholder(np: NowPlaying | null | undefined): boolean {
+  return np?.title === "Even geduld...";
+}
+
+/** Shown when the stream plays but ICY has no song title (news, ads, breaks). */
+export function stationLiveNowPlaying(station: Station): NowPlaying {
+  return {
+    artist: station.name,
+    title: "Live",
+    art: station.defaultArt ?? null,
+    elapsed: 0,
+    duration: 0,
+    listeners: 0,
+    isLive: station.id === "live",
+  };
+}

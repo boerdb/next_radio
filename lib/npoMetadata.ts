@@ -36,13 +36,13 @@ export function parseArtistTitle(
   return { artist: "", title: text };
 }
 
-/** Lege titel, reclame of metadata van een ander station — niet tonen als “now playing”. */
+/** Reclame of metadata van een ander station — niet tonen als “now playing”. */
 export function isLikelyNonMusicIcyTitle(
   raw: string,
   stationName: string,
 ): boolean {
   const text = raw.trim();
-  if (!text) return true;
+  if (!text) return false;
 
   const lower = text.toLowerCase();
   const stationLower = stationName.toLowerCase();
@@ -54,8 +54,6 @@ export function isLikelyNonMusicIcyTitle(
   ) {
     return true;
   }
-
-  if (lower === stationLower) return true;
 
   if (stationLower.includes("sublime") && lower.includes("npo soul")) {
     return true;
