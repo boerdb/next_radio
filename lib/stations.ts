@@ -48,6 +48,7 @@ export const STATIONS: Station[] = [
       "https://playerservices.streamtheworld.com/api/livestream-redirect/SUBLIME.mp3?dist=sublime_website",
     defaultArt:
       "https://6nl7xj2ntppk.b-cdn.net/73cf20f2-a361-480b-bc2f-bec43b6a2bd5",
+    playbackVolume: 0.75,
   },
   {
     id: "nposoul",

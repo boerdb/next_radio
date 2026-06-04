@@ -4,6 +4,8 @@ export interface Station {
   name: string;
   streamUrl: string;
   defaultArt?: string;
+  /** Multiplier on slider volume (e.g. 0.75 if stream is louder than others). */
+  playbackVolume?: number;
 }
 
 export interface NowPlaying {

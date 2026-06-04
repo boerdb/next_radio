@@ -213,9 +213,10 @@ export function useRadioPlayer() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    audio.volume = muted ? 0 : volume;
+    const gain = currentStation?.playbackVolume ?? 1;
+    audio.volume = muted ? 0 : volume * gain;
     audio.muted = muted;
-  }, [volume, muted]);
+  }, [volume, muted, currentStation]);
 
   useEffect(() => {
     nowPlayingRef.current = nowPlaying;
