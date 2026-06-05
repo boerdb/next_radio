@@ -13,6 +13,7 @@ import {
 } from "@/lib/mediaSession";
 import {
   isLoadingPlaceholder,
+  isStationBreakNowPlaying,
   loadingPlaceholder,
   stationLiveNowPlaying,
 } from "@/lib/appIcon";
@@ -285,6 +286,13 @@ export function useRadioPlayer() {
         return;
       }
 
+      if (isStationBreakNowPlaying(enriched, station)) {
+        clearTrackChangeTimer();
+        persistNowPlaying(station, enriched);
+        setNowPlaying(enriched);
+        return;
+      }
+
       pendingTrackRef.current = enriched;
       if (trackChangeTimerRef.current) {
         clearTimeout(trackChangeTimerRef.current);
@@ -324,9 +332,7 @@ export function useRadioPlayer() {
         if (!res.ok) return;
         const data = (await res.json()) as NowPlaying | null;
         if (!data) {
-          if (isLoadingPlaceholder(nowPlayingRef.current)) {
-            applyMetadata(stationLiveNowPlaying(station), station);
-          }
+          applyMetadata(stationLiveNowPlaying(station), station);
           return;
         }
         applyMetadata(data, station);

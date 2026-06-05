@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     if (station.id === "sublime") {
       const sublime = await fetchSublimeNowPlaying();
       if (!sublime) {
-        return NextResponse.json(null);
+        return NextResponse.json(fallback);
       }
 
       const result: NowPlaying = {
@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (isLikelyNonMusicIcyTitle(streamTitle, station.name)) {
-      return NextResponse.json(null);
+      return NextResponse.json(fallback);
     }
 
     const { artist, title } = parseArtistTitle(streamTitle, {

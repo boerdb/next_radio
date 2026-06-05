@@ -35,3 +35,10 @@ export function stationLiveNowPlaying(station: Station): NowPlaying {
     isLive: station.id === "live",
   };
 }
+
+export function isStationBreakNowPlaying(
+  np: NowPlaying | null | undefined,
+  station: Station,
+): boolean {
+  return np?.artist === station.name && np?.title === "Live";
+}
