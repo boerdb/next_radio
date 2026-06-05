@@ -66,6 +66,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "coverartarchive.org" },
       { protocol: "https", hostname: "images.coverartarchive.org" },
       { protocol: "https", hostname: "openweathermap.org" },
+      { protocol: "https", hostname: "cdn-metadata.mediahuisradio.nl" },
     ],
   },
 };

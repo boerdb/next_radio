@@ -5,6 +5,7 @@ import {
   isLikelyNonMusicIcyTitle,
   parseArtistTitle,
 } from "@/lib/npoMetadata";
+import { fetchSublimeNowPlaying } from "@/lib/sublimeMetadata";
 import { getStationById } from "@/lib/stations";
 import type { NowPlaying } from "@/lib/types";
 
@@ -29,6 +30,25 @@ export async function GET(request: NextRequest) {
   };
 
   try {
+    if (station.id === "sublime") {
+      const sublime = await fetchSublimeNowPlaying();
+      if (!sublime) {
+        return NextResponse.json(null);
+      }
+
+      const result: NowPlaying = {
+        artist: sublime.artist,
+        title: sublime.title,
+        art: sublime.albumArt ?? station.defaultArt ?? null,
+        elapsed: 0,
+        duration: sublime.duration,
+        listeners: 0,
+        isLive: false,
+      };
+
+      return NextResponse.json(result);
+    }
+
     const streamTitle = await fetchIcyStreamTitle(station.streamUrl);
 
     if (!streamTitle.trim()) {

@@ -329,15 +329,6 @@ export function useRadioPlayer() {
           }
           return;
         }
-        if (
-          station.id === "sublime" &&
-          /npo\s*soul/i.test(data.artist)
-        ) {
-          if (isLoadingPlaceholder(nowPlayingRef.current)) {
-            applyMetadata(stationLiveNowPlaying(station), station);
-          }
-          return;
-        }
         applyMetadata(data, station);
       } catch {
         /* ignore poll errors */
