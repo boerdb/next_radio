@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
         title: sublime.title,
         art: sublime.albumArt ?? station.defaultArt ?? null,
         elapsed: 0,
-        duration: sublime.duration,
+        duration: 0,
         listeners: 0,
         isLive: false,
       };
