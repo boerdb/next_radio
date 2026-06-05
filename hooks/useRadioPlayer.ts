@@ -13,7 +13,6 @@ import {
 } from "@/lib/mediaSession";
 import {
   isLoadingPlaceholder,
-  isStationBreakNowPlaying,
   loadingPlaceholder,
   stationLiveNowPlaying,
 } from "@/lib/appIcon";
@@ -283,13 +282,6 @@ export function useRadioPlayer() {
           persistNowPlaying(station, next);
           return next;
         });
-        return;
-      }
-
-      if (isStationBreakNowPlaying(enriched, station)) {
-        clearTrackChangeTimer();
-        persistNowPlaying(station, enriched);
-        setNowPlaying(enriched);
         return;
       }
 
