@@ -273,6 +273,12 @@ export function useRadioPlayer() {
       const enriched = enrichArt(data, station, current);
 
       if (!current || isSameTrack(current, enriched)) {
+        if (
+          pendingTrackRef.current &&
+          !isSameTrack(pendingTrackRef.current, enriched)
+        ) {
+          return;
+        }
         clearTrackChangeTimer();
         setNowPlaying((prev) => {
           const next =
@@ -375,7 +381,8 @@ export function useRadioPlayer() {
 
       audio.src = streamSrcWithCacheBust(station.streamUrl);
 
-      const cached = recallStationSnapshot(station.id);
+      const cached =
+        station.id === "sublime" ? null : recallStationSnapshot(station.id);
       if (cached) {
         setNowPlaying(enrichArt(cached, station));
       } else {

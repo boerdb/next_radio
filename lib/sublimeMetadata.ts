@@ -44,8 +44,15 @@ export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null
 
   const artist = data.artist?.trim() ?? "";
   const title = data.title?.trim() ?? "";
+  const albumArt = data.albumArt?.trim() || null;
 
   if (!artist && !title) {
+    cache = { value: null, at: Date.now() };
+    return null;
+  }
+
+  // Geen cover = reclame/nieuws/pauze; titel blijft soms staan op oude track.
+  if (!albumArt) {
     cache = { value: null, at: Date.now() };
     return null;
   }
@@ -53,7 +60,7 @@ export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null
   const result: SublimeNowPlaying = {
     artist: artist || "Sublime FM",
     title: title || "Live",
-    albumArt: data.albumArt?.trim() || null,
+    albumArt,
     duration: typeof data.duration === "number" ? data.duration : 0,
   };
 
