@@ -5,12 +5,18 @@ export const AZURACAST_BASE =
 
 export const NPO_STREAM_URL = "https://icecast.omroep.nl/radio6-bb-mp3";
 
-/** Same-origin proxy — browser uses /api/live-stream (works on WiFi and 5G). */
+/** Same-origin proxy when app is HTTPS / remote. */
 export const LIVE_STREAM_PATH = "/api/live-stream";
 
-/** RSAS on NUC — server-side only (Next.js → .232 on LAN). */
+/** Direct RSAS on NUC — browser on LAN (HTTP app) or server-side. */
+export const LIVE_STREAM_DIRECT_BASE =
+  process.env.NEXT_PUBLIC_LIVE_STREAM_DIRECT ??
+  process.env.LIVE_STREAM_INTERNAL_BASE ??
+  "http://192.168.1.232:8500";
+
+/** RSAS on NUC — server-side metadata + proxy upstream. */
 export const LIVE_STREAM_INTERNAL_BASE =
-  process.env.LIVE_STREAM_INTERNAL_BASE ?? "http://192.168.1.232:8500";
+  process.env.LIVE_STREAM_INTERNAL_BASE ?? LIVE_STREAM_DIRECT_BASE;
 
 export const LIVE_METADATA_URL =
   process.env.LIVE_METADATA_URL ??

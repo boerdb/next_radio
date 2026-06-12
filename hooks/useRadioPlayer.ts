@@ -23,15 +23,24 @@ import {
   withRecalledArt,
 } from "@/lib/nowPlayingSessionCache";
 import { streamSrcWithCacheBust } from "@/lib/streamSrc";
+import { isLiveStreamStation, resolveLiveStreamUrl } from "@/lib/liveStreamUrl";
 import type { NowPlaying, Station } from "@/lib/types";
 
 const METADATA_POLL_MS = 5000;
+const METADATA_POLL_LIVE_MS = 15_000;
 /** Korte pauze bij trackwissel zodat jingle-metadata niet flitst. */
 const TRACK_CHANGE_DELAY_MS = 2500;
-/** Herverbind na buffer-stilstand (mobiel / PWA / live-stream). */
+/** Herverbind na buffer-stilstand (mobiel / PWA). */
 const STALL_RECONNECT_MS = 10_000;
-const LIVE_STALL_RECONNECT_MS = 8_000;
+/** Live via proxy: langere marge — korte `waiting` is normaal, geen reload. */
+const LIVE_STALL_RECONNECT_MS = 45_000;
 const MAX_RECONNECT_ATTEMPTS = 8;
+
+function streamUrlFor(station: Station, cacheBust: boolean): string {
+  const url =
+    station.id === "live" ? resolveLiveStreamUrl() : station.streamUrl;
+  return cacheBust ? streamSrcWithCacheBust(url) : url;
+}
 
 function isSameTrack(a: NowPlaying, b: NowPlaying): boolean {
   return a.artist === b.artist && a.title === b.title;
@@ -76,7 +85,7 @@ export function useRadioPlayer() {
     if (!audio || !station || !intendsPlayRef.current) return;
 
     setLoading(true);
-    audio.src = streamSrcWithCacheBust(station.streamUrl);
+    audio.src = streamUrlFor(station, true);
     audio.load();
     void audio.play().catch(() => setLoading(false));
   }, []);
@@ -113,8 +122,10 @@ export function useRadioPlayer() {
     stallTimerRef.current = setTimeout(() => {
       stallTimerRef.current = null;
       const audio = audioRef.current;
-      if (!audio || !intendsPlayRef.current) return;
-      if (audio.paused) return;
+      const station = currentStationRef.current;
+      if (!audio || !intendsPlayRef.current || audio.paused) return;
+      // Nog data in buffer → niet herladen (voorkomt hick-ups bij live/proxy).
+      if (audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
       scheduleReconnect(500);
     }, timeout);
   }, [scheduleReconnect]);
@@ -151,13 +162,19 @@ export function useRadioPlayer() {
       setLoading(false);
     };
     const onError = () => {
-      if (intendsPlayRef.current) scheduleReconnect(800);
+      if (!intendsPlayRef.current) return;
+      const station = currentStationRef.current;
+      scheduleReconnect(station && isLiveStreamStation(station.id) ? 2000 : 800);
     };
     const onStalled = () => {
       if (intendsPlayRef.current) scheduleStallWatch();
     };
     const onEnded = () => {
-      if (intendsPlayRef.current) scheduleReconnect(500);
+      const station = currentStationRef.current;
+      if (!intendsPlayRef.current) return;
+      // Live-stream eindigt normaal niet; `ended` door proxy-glitch → niet direct reloaden.
+      if (station && isLiveStreamStation(station.id)) return;
+      scheduleReconnect(500);
     };
 
     audio.addEventListener("playing", onPlaying);
@@ -187,7 +204,9 @@ export function useRadioPlayer() {
     const onVisible = () => {
       if (document.visibilityState !== "visible" || !intendsPlayRef.current) return;
       const a = audioRef.current;
+      const station = currentStationRef.current;
       if (!a || a.paused) return;
+      if (station && isLiveStreamStation(station.id)) return;
       if (a.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
         scheduleReconnect(300);
       }
@@ -343,10 +362,16 @@ export function useRadioPlayer() {
     (station: Station) => {
       if (pollRef.current) clearInterval(pollRef.current);
       const poll = () => {
+        if (isLiveStreamStation(station.id) && document.visibilityState === "hidden") {
+          return;
+        }
         void fetchMetadata(station);
       };
       poll();
-      pollRef.current = setInterval(poll, METADATA_POLL_MS);
+      const interval = isLiveStreamStation(station.id)
+        ? METADATA_POLL_LIVE_MS
+        : METADATA_POLL_MS;
+      pollRef.current = setInterval(poll, interval);
     },
     [fetchMetadata],
   );
@@ -372,7 +397,7 @@ export function useRadioPlayer() {
       setCurrentStation(station);
       setLoading(true);
 
-      audio.src = streamSrcWithCacheBust(station.streamUrl);
+      audio.src = streamUrlFor(station, true);
 
       const cached =
         station.id === "sublime" ? null : recallStationSnapshot(station.id);

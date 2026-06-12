@@ -37,6 +37,7 @@ export async function GET(request: Request) {
       if (value) headers.set(name, value);
     }
     headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
+    headers.set("X-Accel-Buffering", "no");
     headers.set("Access-Control-Allow-Origin", "*");
 
     return new Response(res.body, { status: 200, headers });
