@@ -26,8 +26,6 @@ import { streamSrcWithCacheBust } from "@/lib/streamSrc";
 import type { NowPlaying, Station } from "@/lib/types";
 
 const METADATA_POLL_MS = 5000;
-/** Live metadata hits the same host as the audio stream — poll less often. */
-const METADATA_POLL_LIVE_MS = 20_000;
 /** Korte pauze bij trackwissel zodat jingle-metadata niet flitst. */
 const TRACK_CHANGE_DELAY_MS = 2500;
 /** Herverbind na buffer-stilstand (mobiel / PWA / live-stream). */
@@ -341,21 +339,16 @@ export function useRadioPlayer() {
     [applyMetadata],
   );
 
-  const metadataPollMs = useCallback((station: Station) => {
-    return station.id === "live" ? METADATA_POLL_LIVE_MS : METADATA_POLL_MS;
-  }, []);
-
   const startPolling = useCallback(
     (station: Station) => {
       if (pollRef.current) clearInterval(pollRef.current);
       const poll = () => {
-        if (station.id === "live" && document.visibilityState === "hidden") return;
         void fetchMetadata(station);
       };
       poll();
-      pollRef.current = setInterval(poll, metadataPollMs(station));
+      pollRef.current = setInterval(poll, METADATA_POLL_MS);
     },
-    [fetchMetadata, metadataPollMs],
+    [fetchMetadata],
   );
 
   const playStation = useCallback(
