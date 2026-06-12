@@ -19,6 +19,7 @@ export function RadioApp() {
     loading,
     volume,
     muted,
+    bindAudioRef,
     playStation,
     togglePause,
     toggleMute,
@@ -27,6 +28,14 @@ export function RadioApp() {
 
   return (
     <div className="flex h-dvh flex-col bg-[var(--background)]">
+      {/* In-DOM audio: iOS PWA speelt betrouwbaarder door op achtergrond dan losse Audio() */}
+      <audio
+        ref={bindAudioRef}
+        preload="none"
+        playsInline
+        aria-hidden
+        className="pointer-events-none absolute h-0 w-0 opacity-0"
+      />
       <AppHeader />
       <PwaUpdateBanner />
       <IosInstallBanner />

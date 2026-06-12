@@ -35,6 +35,8 @@ const STALL_RECONNECT_MS = 10_000;
 /** Live via proxy: langere marge — korte `waiting` is normaal, geen reload. */
 const LIVE_STALL_RECONNECT_MS = 45_000;
 const MAX_RECONNECT_ATTEMPTS = 8;
+/** iOS PWA: korte pauze bij app-switcher — probeer stilletjes te hervatten. */
+const IOS_BACKGROUND_RESUME_MS = 500;
 
 function streamUrlFor(station: Station, cacheBust: boolean): string {
   const url =
@@ -57,6 +59,8 @@ export function useRadioPlayer() {
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptRef = useRef(0);
+  const backgroundResumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [audioMounted, setAudioMounted] = useState(false);
 
   const [currentStation, setCurrentStation] = useState<Station | null>(null);
   const [nowPlaying, setNowPlaying] = useState<NowPlaying | null>(null);
@@ -77,6 +81,33 @@ export function useRadioPlayer() {
       clearTimeout(reconnectTimerRef.current);
       reconnectTimerRef.current = null;
     }
+  }, []);
+
+  const clearBackgroundResumeTimer = useCallback(() => {
+    if (backgroundResumeTimerRef.current) {
+      clearTimeout(backgroundResumeTimerRef.current);
+      backgroundResumeTimerRef.current = null;
+    }
+  }, []);
+
+  const resumeIfIntended = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || !intendsPlayRef.current || !audio.paused) return;
+    void audio.play().catch(() => setLoading(false));
+  }, []);
+
+  const scheduleBackgroundResume = useCallback(() => {
+    if (!intendsPlayRef.current) return;
+    clearBackgroundResumeTimer();
+    backgroundResumeTimerRef.current = setTimeout(() => {
+      backgroundResumeTimerRef.current = null;
+      resumeIfIntended();
+    }, IOS_BACKGROUND_RESUME_MS);
+  }, [clearBackgroundResumeTimer, resumeIfIntended]);
+
+  const bindAudioRef = useCallback((node: HTMLAudioElement | null) => {
+    audioRef.current = node;
+    setAudioMounted(!!node);
   }, []);
 
   const reloadStream = useCallback(() => {
@@ -135,11 +166,12 @@ export function useRadioPlayer() {
   }, [currentStation]);
 
   useEffect(() => {
-    const audio = new Audio();
-    audio.preload = "none";
-    audioRef.current = audio;
+    if (!audioMounted) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     const onPlaying = () => {
+      clearBackgroundResumeTimer();
       reconnectAttemptRef.current = 0;
       clearStallTimer();
       clearReconnectTimer();
@@ -152,7 +184,11 @@ export function useRadioPlayer() {
         setNowPlaying(live);
       }
     };
-    const onPause = () => setIsPlaying(false);
+    const onPause = () => {
+      setIsPlaying(false);
+      // iOS pauzeert soms bij app-switcher terwijl gebruiker wil blijven luisteren.
+      if (intendsPlayRef.current) scheduleBackgroundResume();
+    };
     const onWaiting = () => {
       setLoading(true);
       scheduleStallWatch();
@@ -172,7 +208,6 @@ export function useRadioPlayer() {
     const onEnded = () => {
       const station = currentStationRef.current;
       if (!intendsPlayRef.current) return;
-      // Live-stream eindigt normaal niet; `ended` door proxy-glitch → niet direct reloaden.
       if (station && isLiveStreamStation(station.id)) return;
       scheduleReconnect(500);
     };
@@ -188,10 +223,12 @@ export function useRadioPlayer() {
     setupMediaSessionHandlers(
       () => {
         intendsPlayRef.current = true;
+        clearBackgroundResumeTimer();
         void audio.play();
       },
       () => {
         intendsPlayRef.current = false;
+        clearBackgroundResumeTimer();
         clearStallTimer();
         clearReconnectTimer();
         audio.pause();
@@ -203,16 +240,21 @@ export function useRadioPlayer() {
     };
     const onVisible = () => {
       if (document.visibilityState !== "visible" || !intendsPlayRef.current) return;
+      resumeIfIntended();
       const a = audioRef.current;
       const station = currentStationRef.current;
-      if (!a || a.paused) return;
+      if (!a || !a.paused) return;
       if (station && isLiveStreamStation(station.id)) return;
       if (a.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
         scheduleReconnect(300);
       }
     };
+    const onPageShow = () => {
+      resumeIfIntended();
+    };
 
     window.addEventListener("online", onOnline);
+    window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisible);
 
     return () => {
@@ -224,15 +266,22 @@ export function useRadioPlayer() {
       audio.removeEventListener("stalled", onStalled);
       audio.removeEventListener("ended", onEnded);
       window.removeEventListener("online", onOnline);
+      window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisible);
+      clearBackgroundResumeTimer();
       clearStallTimer();
       clearReconnectTimer();
       audio.pause();
-      audio.src = "";
+      audio.removeAttribute("src");
+      audio.load();
     };
   }, [
+    audioMounted,
+    clearBackgroundResumeTimer,
     clearReconnectTimer,
     clearStallTimer,
+    resumeIfIntended,
+    scheduleBackgroundResume,
     scheduleReconnect,
     scheduleStallWatch,
   ]);
@@ -383,6 +432,7 @@ export function useRadioPlayer() {
 
       if (currentStation?.id === station.id && isPlaying) {
         intendsPlayRef.current = false;
+        clearBackgroundResumeTimer();
         clearStallTimer();
         clearReconnectTimer();
         audio.pause();
@@ -416,6 +466,7 @@ export function useRadioPlayer() {
       }
     },
     [
+      clearBackgroundResumeTimer,
       clearReconnectTimer,
       clearStallTimer,
       clearTrackChangeTimer,
@@ -432,6 +483,7 @@ export function useRadioPlayer() {
 
     if (isPlaying) {
       intendsPlayRef.current = false;
+      clearBackgroundResumeTimer();
       clearStallTimer();
       clearReconnectTimer();
       audio.pause();
@@ -440,7 +492,7 @@ export function useRadioPlayer() {
       reconnectAttemptRef.current = 0;
       void audio.play();
     }
-  }, [clearReconnectTimer, clearStallTimer, currentStation, isPlaying]);
+  }, [clearBackgroundResumeTimer, clearReconnectTimer, clearStallTimer, currentStation, isPlaying]);
 
   const toggleMute = useCallback(() => {
     setMuted((m) => !m);
@@ -458,11 +510,12 @@ export function useRadioPlayer() {
         clearTimeout(trackChangeTimerRef.current);
         trackChangeTimerRef.current = null;
       }
+      clearBackgroundResumeTimer();
       clearStallTimer();
       clearReconnectTimer();
       pendingTrackRef.current = null;
     };
-  }, [clearReconnectTimer, clearStallTimer]);
+  }, [clearBackgroundResumeTimer, clearReconnectTimer, clearStallTimer]);
 
   return {
     stations: STATIONS,
@@ -472,6 +525,7 @@ export function useRadioPlayer() {
     loading,
     volume,
     muted,
+    bindAudioRef,
     playStation,
     togglePause,
     toggleMute,
