@@ -67,7 +67,7 @@ export function NowPlayingCard({
 
   return (
     <section className="flex shrink-0 flex-col items-center px-4 pb-4 pt-2">
-      <div className="relative mb-4 aspect-square w-full max-w-[280px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40">
+      <div className="relative mb-4 aspect-square w-full max-w-[320px] overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] shadow-lg shadow-black/40">
         {displayedSrc ? (
           <Image
             key={displayedSrc}
@@ -75,7 +75,7 @@ export function NowPlayingCard({
             alt={`${artist} - ${title}`}
             fill
             className="album-art-enter object-cover rounded-2xl"
-            sizes="280px"
+            sizes="320px"
             priority
             unoptimized={displayedSrc.startsWith("http")}
           />

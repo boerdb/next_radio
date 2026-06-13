@@ -37,6 +37,8 @@ export function updateMediaSession(
 export function setupMediaSessionHandlers(
   onPlay: () => void,
   onPause: () => void,
+  onNext?: () => void,
+  onPrevious?: () => void,
 ): void {
   if (typeof navigator === "undefined" || !("mediaSession" in navigator)) {
     return;
@@ -45,4 +47,19 @@ export function setupMediaSessionHandlers(
   navigator.mediaSession.setActionHandler("play", onPlay);
   navigator.mediaSession.setActionHandler("pause", onPause);
   navigator.mediaSession.setActionHandler("stop", onPause);
+
+  if (onNext) {
+    try {
+      navigator.mediaSession.setActionHandler("nexttrack", onNext);
+    } catch {
+      /* unsupported */
+    }
+  }
+  if (onPrevious) {
+    try {
+      navigator.mediaSession.setActionHandler("previoustrack", onPrevious);
+    } catch {
+      /* unsupported */
+    }
+  }
 }

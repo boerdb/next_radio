@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { safeToReloadForUpdate } from "@/lib/playbackGate";
 
 const DISMISS_KEY = "bens-music-update-dismissed";
 const APPLIED_SW_KEY = "bens-music-update-applied-sw";
@@ -76,6 +77,12 @@ export function usePwaUpdate() {
 
     const reloadForUpdate = () => {
       if (!refreshingRef.current) return;
+      if (!safeToReloadForUpdate()) {
+        refreshingRef.current = false;
+        clearReloadFallback();
+        clearWaitingListener();
+        return;
+      }
       clearReloadFallback();
       clearWaitingListener();
       window.location.reload();
@@ -128,6 +135,7 @@ export function usePwaUpdate() {
 
     const onVisibilityChange = () => {
       if (document.visibilityState !== "visible") return;
+      if (!safeToReloadForUpdate()) return;
       const reg = registrationRef.current;
       if (!reg || refreshingRef.current) return;
       void reg.update().then(() => checkForUpdate(reg));
@@ -137,7 +145,7 @@ export function usePwaUpdate() {
 
     const interval = window.setInterval(() => {
       const reg = registrationRef.current;
-      if (!reg || refreshingRef.current) return;
+      if (!reg || refreshingRef.current || !safeToReloadForUpdate()) return;
       void reg.update().then(() => checkForUpdate(reg));
     }, 60 * 60 * 1000);
 
@@ -158,7 +166,7 @@ export function usePwaUpdate() {
       window.clearTimeout(reloadFallbackRef.current);
     }
     reloadFallbackRef.current = window.setTimeout(() => {
-      if (!refreshingRef.current) return;
+      if (!refreshingRef.current || !safeToReloadForUpdate()) return;
       window.location.reload();
     }, RELOAD_FALLBACK_MS);
   }, []);
@@ -169,6 +177,10 @@ export function usePwaUpdate() {
 
     markUpdateDismissed();
     hideUpdateBanner(setUpdateAvailable);
+
+    if (!safeToReloadForUpdate()) {
+      return;
+    }
 
     if (!waiting) {
       window.location.reload();

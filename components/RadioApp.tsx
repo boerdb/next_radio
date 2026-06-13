@@ -1,16 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import { AppHeader } from "./AppHeader";
-import { AndroidInstallBanner } from "./AndroidInstallBanner";
-import { IosInstallBanner } from "./IosInstallBanner";
-import { PwaUpdateBanner } from "./PwaUpdateBanner";
+import { ConnectionStatus } from "./ConnectionStatus";
 import { NowPlayingCard } from "./NowPlayingCard";
 import { PlayerBar } from "./PlayerBar";
-import { StationList } from "./StationList";
-import { WeatherWidget } from "./WeatherWidget";
-import { useRadioPlayer } from "@/hooks/useRadioPlayer";
+import { SettingsSheet } from "./SettingsSheet";
+import { StationChips } from "./StationChips";
+import { usePlayer } from "./PlayerProvider";
 
 export function RadioApp() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const {
     stations,
     currentStation,
@@ -19,42 +19,37 @@ export function RadioApp() {
     loading,
     volume,
     muted,
-    bindAudioRef,
+    connectionMode,
     playStation,
     togglePause,
     toggleMute,
     changeVolume,
-  } = useRadioPlayer();
+  } = usePlayer();
 
   return (
     <div className="flex h-dvh flex-col bg-[var(--background)]">
-      {/* In-DOM audio: iOS PWA speelt betrouwbaarder door op achtergrond dan losse Audio() */}
-      <audio
-        ref={bindAudioRef}
-        preload="none"
-        playsInline
-        aria-hidden
-        className="pointer-events-none absolute h-0 w-0 opacity-0"
+      <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
+      <ConnectionStatus
+        mode={connectionMode}
+        loading={loading}
+        isPlaying={isPlaying}
       />
-      <AppHeader />
-      <PwaUpdateBanner />
-      <IosInstallBanner />
-      <AndroidInstallBanner />
-      <WeatherWidget />
       <NowPlayingCard
         station={currentStation}
         nowPlaying={nowPlaying}
         isPlaying={isPlaying}
         loading={loading}
       />
-      <StationList
+      <StationChips
         stations={stations}
         currentStation={currentStation}
         isPlaying={isPlaying}
         onSelect={playStation}
       />
+      <div className="min-h-0 flex-1" aria-hidden />
       <PlayerBar
         station={currentStation}
+        nowPlaying={nowPlaying}
         isPlaying={isPlaying}
         loading={loading}
         volume={volume}
@@ -62,6 +57,10 @@ export function RadioApp() {
         onTogglePause={togglePause}
         onToggleMute={toggleMute}
         onVolumeChange={changeVolume}
+      />
+      <SettingsSheet
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
       />
     </div>
   );

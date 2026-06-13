@@ -1,9 +1,10 @@
 "use client";
 
-import type { Station } from "@/lib/types";
+import type { NowPlaying, Station } from "@/lib/types";
 
 interface PlayerBarProps {
   station: Station | null;
+  nowPlaying: NowPlaying | null;
   isPlaying: boolean;
   loading: boolean;
   volume: number;
@@ -15,6 +16,7 @@ interface PlayerBarProps {
 
 export function PlayerBar({
   station,
+  nowPlaying,
   isPlaying,
   loading,
   volume,
@@ -24,6 +26,14 @@ export function PlayerBar({
   onVolumeChange,
 }: PlayerBarProps) {
   const effectiveVolume = muted ? 0 : volume;
+  const subtitle =
+    nowPlaying?.title && nowPlaying.title !== station?.name
+      ? `${nowPlaying.artist} · ${nowPlaying.title}`
+      : station
+        ? isPlaying
+          ? "Speelt af"
+          : "Gepauzeerd"
+        : "Selecteer een station";
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] bg-[var(--toolbar)] px-4 py-3 safe-bottom">
@@ -48,9 +58,7 @@ export function PlayerBar({
           <p className="truncate text-sm font-medium text-white">
             {station?.name ?? "Geen station"}
           </p>
-          <p className="truncate text-xs text-[var(--text-muted)]">
-            {station ? (isPlaying ? "Speelt af" : "Gepauzeerd") : "Selecteer een station"}
-          </p>
+          <p className="truncate text-xs text-[var(--text-muted)]">{subtitle}</p>
         </div>
 
         <button

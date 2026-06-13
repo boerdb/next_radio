@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { PlayerProvider } from "@/components/PlayerProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nl">
-      <body>{children}</body>
+      <body>
+        <PlayerProvider>{children}</PlayerProvider>
+      </body>
     </html>
   );
 }
