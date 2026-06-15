@@ -32,6 +32,7 @@ const withPWA = withPWAInit({
         urlPattern: ({ url }: { url: URL }) => {
           const host = url.hostname;
           if (host === "stream.benswebradio.nl") return true;
+          if (host === "192.168.1.81") return true;
           if (host === "192.168.1.232") return true;
           if (host === "benswebradio.nl" && url.pathname.startsWith("/listen/")) return true;
           if (host === "icecast.omroep.nl") return true;

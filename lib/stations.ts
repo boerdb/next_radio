@@ -8,19 +8,19 @@ export const NPO_STREAM_URL = "https://icecast.omroep.nl/radio6-bb-mp3";
 /** Same-origin proxy when app is HTTPS / remote. */
 export const LIVE_STREAM_PATH = "/api/live-stream";
 
-/** Direct RSAS on NUC — browser on LAN (HTTP app) or server-side. */
+/** Direct PlayIt/RSAS on LAN — browser on HTTP app or server-side upstream. */
 export const LIVE_STREAM_DIRECT_BASE =
   process.env.NEXT_PUBLIC_LIVE_STREAM_DIRECT ??
   process.env.LIVE_STREAM_INTERNAL_BASE ??
-  "http://192.168.1.232:8500";
+  "http://192.168.1.81:8000/radio";
 
-/** RSAS on NUC — server-side metadata + proxy upstream. */
+/** PlayIt on TerraMaster — server-side metadata + proxy upstream. */
 export const LIVE_STREAM_INTERNAL_BASE =
   process.env.LIVE_STREAM_INTERNAL_BASE ?? LIVE_STREAM_DIRECT_BASE;
 
 export const LIVE_METADATA_URL =
   process.env.LIVE_METADATA_URL ??
-  `${LIVE_STREAM_INTERNAL_BASE}/live/metadata`;
+  `${LIVE_STREAM_INTERNAL_BASE}/metadata`;
 
 export const KNOWN_AZURA_DEFAULT_ART =
   /\/static\/uploads\/station[123]\/album_art\.\d+\.(png|jpe?g|webp)(\?.*)?$/i;

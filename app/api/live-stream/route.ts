@@ -16,10 +16,10 @@ const PASSTHROUGH_HEADERS = [
   "icy-pub",
 ];
 
-/** Proxy RSAS live audio via Next.js — same HTTPS origin as the PWA (works on 5G). */
+/** Proxy live audio via Next.js — same HTTPS origin as the PWA (works on 5G). */
 export async function GET(request: Request) {
   const search = new URL(request.url).search;
-  const upstream = `${LIVE_STREAM_INTERNAL_BASE}/live${search}`;
+  const upstream = `${LIVE_STREAM_INTERNAL_BASE}${search}`;
 
   try {
     const res = await fetch(upstream, {

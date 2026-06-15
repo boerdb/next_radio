@@ -18,7 +18,7 @@ export function resolveLiveStreamMode(): LiveStreamMode {
 
 export function resolveLiveStreamUrl(): string {
   if (resolveLiveStreamMode() === "direct-lan") {
-    return `${LIVE_STREAM_DIRECT_BASE}/live?type=.mp3`;
+    return `${LIVE_STREAM_DIRECT_BASE}?type=.mp3`;
   }
   return `${LIVE_STREAM_PATH}?type=.mp3`;
 }
