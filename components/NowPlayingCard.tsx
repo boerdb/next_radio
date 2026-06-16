@@ -88,10 +88,10 @@ export function NowPlayingCard({
           </span>
         )}
       </div>
-      <h2 className="max-w-full truncate text-center text-xl font-semibold text-white">
+      <h2 className="max-w-full truncate text-center text-lg font-semibold text-white">
         {title}
       </h2>
-      <p className="max-w-full truncate text-center text-sm text-[var(--secondary)]">
+      <p className="mt-0.5 max-w-full truncate text-center text-base font-medium text-[var(--secondary)]">
         {artist}
       </p>
       {station && nowPlaying && nowPlaying.duration > 0 && (
