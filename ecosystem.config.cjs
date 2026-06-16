@@ -34,7 +34,7 @@ const fileEnv = {
 module.exports = {
   apps: [
     {
-      name: "bens-music",
+      name: "next_radio",
       cwd: __dirname,
       script: "node_modules/next/dist/bin/next",
       args: "start -p 3002",

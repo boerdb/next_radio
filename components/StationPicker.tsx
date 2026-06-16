@@ -8,11 +8,10 @@ import {
   type KeyboardEvent,
   type UIEvent,
 } from "react";
-import { stationLabel } from "@/lib/stationLabels";
 import type { Station } from "@/lib/types";
 
-const ITEM_HEIGHT = 52;
-const PICKER_HEIGHT = 156;
+const ITEM_HEIGHT = 60;
+const PICKER_HEIGHT = 180;
 const EDGE_PADDING = (PICKER_HEIGHT - ITEM_HEIGHT) / 2;
 const SCROLL_END_MS = 120;
 
@@ -143,7 +142,7 @@ export function StationPicker({
       </h3>
 
       <div
-        className="station-picker relative mx-auto w-full max-w-[280px] shrink-0"
+        className="station-picker relative mx-auto w-full max-w-[320px] shrink-0"
         style={{ height: PICKER_HEIGHT }}
       >
         <div
@@ -187,12 +186,12 @@ export function StationPicker({
                   type="button"
                   onClick={() => handleItemClick(index)}
                   aria-current={isFocused ? "true" : undefined}
-                  className={`station-picker-item flex w-full items-center justify-center gap-1.5 rounded-xl px-4 text-center font-medium transition-[color,opacity,transform] duration-200 ${
+                  className={`station-picker-item flex w-full items-center justify-center gap-1.5 rounded-xl px-3 text-center font-medium leading-snug transition-[color,opacity,transform] duration-200 ${
                     isFocused
-                      ? "text-base text-white"
+                      ? "text-sm text-white"
                       : distance === 1
-                        ? "text-sm text-white/65"
-                        : "text-sm text-[var(--text-muted)]"
+                        ? "text-xs text-white/65"
+                        : "text-xs text-[var(--text-muted)]"
                   }`}
                   style={{
                     height: ITEM_HEIGHT,
@@ -200,7 +199,9 @@ export function StationPicker({
                     transform: `scale(${isFocused ? 1 : distance === 1 ? 0.94 : 0.88})`,
                   }}
                 >
-                  {stationLabel(station)}
+                  <span className={isFocused ? "line-clamp-2 max-w-full" : "truncate max-w-full"}>
+                    {station.name}
+                  </span>
                   {station.id === "live" && (
                     <span
                       className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${

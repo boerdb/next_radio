@@ -1,6 +1,5 @@
 "use client";
 
-import { stationLabel } from "@/lib/stationLabels";
 import type { Station } from "@/lib/types";
 
 interface StationChipsProps {
@@ -41,7 +40,7 @@ export function StationChips({
                     : "border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] hover:border-[var(--primary)]/50 hover:text-white"
               }`}
             >
-              {stationLabel(station)}
+              {station.name}
               {station.id === "live" && (
                 <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--danger)] align-middle" />
               )}
