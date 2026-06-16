@@ -1,22 +1,7 @@
 "use client";
 
+import { stationLabel } from "@/lib/stationLabels";
 import type { Station } from "@/lib/types";
-
-const CHIP_LABELS: Record<string, string> = {
-  bens: "Bens Web",
-  noordijs: "70s & 80s",
-  soul: "R&B",
-  live: "Live",
-  sublime: "Sublime",
-  nposoul: "NPO Soul",
-  truernb181: "181 R&B",
-  "gotradio-rnb": "GotRadio",
-  "gotradio-urban": "Urban",
-};
-
-function chipLabel(station: Station): string {
-  return CHIP_LABELS[station.id] ?? station.name;
-}
 
 interface StationChipsProps {
   stations: Station[];
@@ -56,7 +41,7 @@ export function StationChips({
                     : "border-[var(--border)] bg-[var(--card)] text-[var(--text-muted)] hover:border-[var(--primary)]/50 hover:text-white"
               }`}
             >
-              {chipLabel(station)}
+              {stationLabel(station)}
               {station.id === "live" && (
                 <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-[var(--danger)] align-middle" />
               )}

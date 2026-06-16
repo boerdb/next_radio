@@ -6,7 +6,7 @@ import { ConnectionStatus } from "./ConnectionStatus";
 import { NowPlayingCard } from "./NowPlayingCard";
 import { PlayerBar } from "./PlayerBar";
 import { SettingsSheet } from "./SettingsSheet";
-import { StationChips } from "./StationChips";
+import { StationPicker } from "./StationPicker";
 import { usePlayer } from "./PlayerProvider";
 
 export function RadioApp() {
@@ -40,13 +40,12 @@ export function RadioApp() {
         isPlaying={isPlaying}
         loading={loading}
       />
-      <StationChips
+      <StationPicker
         stations={stations}
         currentStation={currentStation}
         isPlaying={isPlaying}
         onSelect={playStation}
       />
-      <div className="min-h-0 flex-1" aria-hidden />
       <PlayerBar
         station={currentStation}
         nowPlaying={nowPlaying}
