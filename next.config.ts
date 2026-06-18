@@ -29,8 +29,7 @@ const withPWA = withPWAInit({
       },
       {
         // Never cache radio streams (long-lived ICY connections break with SW caches).
-        urlPattern: ({ sameOrigin, url }: { sameOrigin: boolean; url: URL }) => {
-          if (sameOrigin && url.pathname.startsWith("/api/live-stream")) return true;
+        urlPattern: ({ url }: { url: URL }) => {
           const host = url.hostname;
           if (host === "stream.benswebradio.nl") return true;
           if (host === "192.168.1.81") return true;
