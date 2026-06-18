@@ -14,7 +14,9 @@ import { streamUrlFor } from "./streamTransport";
 import type { NowPlaying, Station } from "./types";
 
 const STALL_RECONNECT_MS = 10_000;
-const LIVE_STALL_RECONNECT_MS = 45_000;
+const LIVE_STALL_RECONNECT_MS = 90_000;
+const LIVE_STALL_GRACE_MS = 45_000;
+const LIVE_ERROR_GRACE_MS = 8_000;
 const MAX_RECONNECT_ATTEMPTS = 8;
 const IOS_BACKGROUND_RESUME_MS = 500;
 
@@ -56,6 +58,8 @@ export class AudioEngine {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private backgroundResumeTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
+  private liveErrorGraceTimer: ReturnType<typeof setTimeout> | null = null;
+  private liveStallGraceTimer: ReturnType<typeof setTimeout> | null = null;
 
   static getInstance(): AudioEngine {
     if (typeof window === "undefined") {
@@ -132,6 +136,7 @@ export class AudioEngine {
     this.clearStallTimer();
     this.clearReconnectTimer();
     this.clearBackgroundResumeTimer();
+    this.clearLiveGraceTimers();
     this.reconnectAttempt = 0;
     this.intendsPlay = true;
 
@@ -144,6 +149,7 @@ export class AudioEngine {
     });
 
     this.metadata.start(station);
+    this.audio.preload = isLiveStreamStation(station.id) ? "auto" : "none";
     this.audio.src = streamUrlFor(station, true);
     this.applyVolume();
     void this.audio.play().catch(() => this.patch({ loading: false }));
@@ -200,14 +206,19 @@ export class AudioEngine {
     this.clearBackgroundResumeTimer();
     this.clearStallTimer();
     this.clearReconnectTimer();
+    this.clearLiveGraceTimers();
     this.audio.pause();
   }
 
-  private reloadStream(): void {
+  private isLivePlayback(): boolean {
+    return isLiveStreamStation(this.state.currentStation?.id ?? "");
+  }
+
+  private reloadStream(cacheBust = true): void {
     const station = this.state.currentStation;
     if (!station || !this.intendsPlay) return;
     this.patch({ loading: true });
-    this.audio.src = streamUrlFor(station, true);
+    this.audio.src = streamUrlFor(station, cacheBust);
     this.audio.load();
     void this.audio.play().catch(() => this.patch({ loading: false }));
   }
@@ -228,7 +239,8 @@ export class AudioEngine {
       this.reconnectTimer = null;
       if (!this.intendsPlay) return;
       this.reconnectAttempt += 1;
-      this.reloadStream();
+      const cacheBust = this.isLivePlayback() ? this.reconnectAttempt >= 3 : true;
+      this.reloadStream(cacheBust);
     }, backoff);
   }
 
@@ -240,8 +252,27 @@ export class AudioEngine {
 
     this.stallTimer = setTimeout(() => {
       this.stallTimer = null;
-      if (!this.intendsPlay || this.audio.paused) return;
+      if (!this.intendsPlay) return;
       if (this.audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
+
+      if (this.isLivePlayback()) {
+        void this.audio.play().catch(() => {});
+        this.clearLiveStallGraceTimer();
+        this.liveStallGraceTimer = setTimeout(() => {
+          this.liveStallGraceTimer = null;
+          if (!this.intendsPlay) return;
+          if (
+            !this.audio.paused &&
+            this.audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+          ) {
+            return;
+          }
+          this.scheduleReconnect(0);
+        }, LIVE_STALL_GRACE_MS);
+        return;
+      }
+
+      if (this.audio.paused) return;
       this.scheduleReconnect(500);
     }, timeout);
   }
@@ -274,6 +305,7 @@ export class AudioEngine {
 
   private onPlaying(): void {
     this.clearBackgroundResumeTimer();
+    this.clearLiveGraceTimers();
     this.reconnectAttempt = 0;
     this.clearStallTimer();
     this.clearReconnectTimer();
@@ -302,19 +334,42 @@ export class AudioEngine {
   }
 
   private onWaiting(): void {
-    this.patch({ loading: true });
+    if (!this.isLivePlayback()) {
+      this.patch({ loading: true });
+    }
     this.scheduleStallWatch();
   }
 
   private onCanPlay(): void {
     this.clearStallTimer();
+    this.clearLiveStallGraceTimer();
     this.patch({ loading: false });
   }
 
   private onError(): void {
     if (!this.intendsPlay) return;
-    const live = isLiveStreamStation(this.state.currentStation?.id ?? "");
-    this.scheduleReconnect(live ? 2000 : 800);
+
+    if (this.isLivePlayback()) {
+      if (!this.liveErrorGraceTimer) {
+        void this.audio.play().catch(() => {});
+        this.clearReconnectTimer();
+        this.liveErrorGraceTimer = setTimeout(() => {
+          this.liveErrorGraceTimer = null;
+          if (!this.intendsPlay) return;
+          if (
+            !this.audio.error &&
+            !this.audio.paused &&
+            this.audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+          ) {
+            return;
+          }
+          this.scheduleReconnect(0);
+        }, LIVE_ERROR_GRACE_MS);
+      }
+      return;
+    }
+
+    this.scheduleReconnect(800);
   }
 
   private onStalled(): void {
@@ -342,6 +397,25 @@ export class AudioEngine {
     if (this.audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
       this.scheduleReconnect(300);
     }
+  }
+
+  private clearLiveStallGraceTimer(): void {
+    if (this.liveStallGraceTimer) {
+      clearTimeout(this.liveStallGraceTimer);
+      this.liveStallGraceTimer = null;
+    }
+  }
+
+  private clearLiveErrorGraceTimer(): void {
+    if (this.liveErrorGraceTimer) {
+      clearTimeout(this.liveErrorGraceTimer);
+      this.liveErrorGraceTimer = null;
+    }
+  }
+
+  private clearLiveGraceTimers(): void {
+    this.clearLiveStallGraceTimer();
+    this.clearLiveErrorGraceTimer();
   }
 
   private clearStallTimer(): void {
