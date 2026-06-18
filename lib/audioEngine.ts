@@ -14,7 +14,9 @@ import { streamUrlFor } from "./streamTransport";
 import type { NowPlaying, Station } from "./types";
 
 const STALL_RECONNECT_MS = 10_000;
-const LIVE_STALL_RECONNECT_MS = 45_000;
+const LIVE_STALL_RECONNECT_MS = 60_000;
+const LIVE_SOFT_RECOVER_ATTEMPTS = 4;
+const LIVE_SOFT_RECOVER_DELAY_MS = 2500;
 const MAX_RECONNECT_ATTEMPTS = 8;
 const IOS_BACKGROUND_RESUME_MS = 500;
 
@@ -56,6 +58,7 @@ export class AudioEngine {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private backgroundResumeTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
+  private liveSoftRecoverCount = 0;
 
   static getInstance(): AudioEngine {
     if (typeof window === "undefined") {
@@ -133,6 +136,7 @@ export class AudioEngine {
     this.clearReconnectTimer();
     this.clearBackgroundResumeTimer();
     this.reconnectAttempt = 0;
+    this.liveSoftRecoverCount = 0;
     this.intendsPlay = true;
 
     const nowPlaying = this.metadata.initialNowPlaying(station);
@@ -144,6 +148,7 @@ export class AudioEngine {
     });
 
     this.metadata.start(station);
+    this.audio.preload = isLiveStreamStation(station.id) ? "auto" : "none";
     this.audio.src = streamUrlFor(station, true);
     this.applyVolume();
     void this.audio.play().catch(() => this.patch({ loading: false }));
@@ -203,13 +208,60 @@ export class AudioEngine {
     this.audio.pause();
   }
 
-  private reloadStream(): void {
+  private isLivePlayback(): boolean {
+    return isLiveStreamStation(this.state.currentStation?.id ?? "");
+  }
+
+  private reloadStream(cacheBust = true): void {
     const station = this.state.currentStation;
     if (!station || !this.intendsPlay) return;
     this.patch({ loading: true });
-    this.audio.src = streamUrlFor(station, true);
+    this.audio.src = streamUrlFor(station, cacheBust);
     this.audio.load();
     void this.audio.play().catch(() => this.patch({ loading: false }));
+  }
+
+  /**
+   * Live streams: avoid tearing down the connection on brief buffer gaps.
+   * A new HTTP connection often replays audio from the encoder buffer (old songs).
+   */
+  private recoverFromStreamGap(): void {
+    if (!this.intendsPlay || !this.state.currentStation) return;
+
+    if (
+      this.isLivePlayback() &&
+      this.liveSoftRecoverCount < LIVE_SOFT_RECOVER_ATTEMPTS &&
+      this.audio.src
+    ) {
+      this.liveSoftRecoverCount += 1;
+      this.patch({ loading: true });
+      void this.audio.play().catch(() => this.patch({ loading: false }));
+
+      this.clearReconnectTimer();
+      this.reconnectTimer = setTimeout(() => {
+        this.reconnectTimer = null;
+        if (!this.intendsPlay) return;
+        if (
+          !this.audio.paused &&
+          this.audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+        ) {
+          this.patch({ loading: false });
+          return;
+        }
+        this.recoverFromStreamGap();
+      }, LIVE_SOFT_RECOVER_DELAY_MS);
+      return;
+    }
+
+    if (this.reconnectAttempt >= MAX_RECONNECT_ATTEMPTS) {
+      this.patch({ loading: false });
+      return;
+    }
+
+    this.reconnectAttempt += 1;
+    this.liveSoftRecoverCount = 0;
+    const cacheBust = !this.isLivePlayback() || this.reconnectAttempt >= 3;
+    this.reloadStream(cacheBust);
   }
 
   private scheduleReconnect(delayMs = 0): void {
@@ -228,7 +280,7 @@ export class AudioEngine {
       this.reconnectTimer = null;
       if (!this.intendsPlay) return;
       this.reconnectAttempt += 1;
-      this.reloadStream();
+      this.reloadStream(true);
     }, backoff);
   }
 
@@ -242,6 +294,10 @@ export class AudioEngine {
       this.stallTimer = null;
       if (!this.intendsPlay || this.audio.paused) return;
       if (this.audio.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA) return;
+      if (this.isLivePlayback()) {
+        this.recoverFromStreamGap();
+        return;
+      }
       this.scheduleReconnect(500);
     }, timeout);
   }
@@ -275,6 +331,7 @@ export class AudioEngine {
   private onPlaying(): void {
     this.clearBackgroundResumeTimer();
     this.reconnectAttempt = 0;
+    this.liveSoftRecoverCount = 0;
     this.clearStallTimer();
     this.clearReconnectTimer();
     this.patch({ isPlaying: true, loading: false });
@@ -313,8 +370,11 @@ export class AudioEngine {
 
   private onError(): void {
     if (!this.intendsPlay) return;
-    const live = isLiveStreamStation(this.state.currentStation?.id ?? "");
-    this.scheduleReconnect(live ? 2000 : 800);
+    if (this.isLivePlayback()) {
+      this.recoverFromStreamGap();
+      return;
+    }
+    this.scheduleReconnect(800);
   }
 
   private onStalled(): void {
