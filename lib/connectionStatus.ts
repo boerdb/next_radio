@@ -3,7 +3,7 @@ import {
   resolveLiveStreamMode,
 } from "./liveStreamUrl";
 
-export type ConnectionMode = "direct-lan" | "external" | "idle";
+export type ConnectionMode = "direct-lan" | "proxy" | "external" | "idle";
 
 export interface ConnectionStatus {
   mode: ConnectionMode;
@@ -14,8 +14,8 @@ export function connectionModeForStation(
   stationId: string | undefined,
 ): ConnectionMode {
   if (!stationId) return "idle";
-  if (isLiveStreamStation(stationId) && resolveLiveStreamMode() === "direct-lan") {
-    return "direct-lan";
+  if (isLiveStreamStation(stationId)) {
+    return resolveLiveStreamMode() === "direct-lan" ? "direct-lan" : "proxy";
   }
   return "external";
 }
@@ -29,6 +29,8 @@ export function connectionStatusLabel(
   switch (mode) {
     case "direct-lan":
       return "Direct · LAN";
+    case "proxy":
+      return "Intern · via server";
     case "external":
       return "Extern stream";
     default:

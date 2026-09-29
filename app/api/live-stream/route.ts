@@ -6,7 +6,6 @@ export const runtime = "nodejs";
 const PASSTHROUGH_HEADERS = [
   "content-type",
   "icy-br",
-  "icy-metaint",
   "ice-audio-info",
   "icy-name",
   "icy-genre",
@@ -18,13 +17,16 @@ const PASSTHROUGH_HEADERS = [
 
 /** Proxy live audio via Next.js — same HTTPS origin as the PWA (works on 5G). */
 export async function GET(request: Request) {
-  const search = new URL(request.url).search;
-  const upstream = `${LIVE_STREAM_INTERNAL_BASE}${search}`;
+  const upstream = `${LIVE_STREAM_INTERNAL_BASE}?type=.mp3`;
 
   try {
     const res = await fetch(upstream, {
       cache: "no-store",
       signal: request.signal,
+      headers: {
+        // Raw MP3. Interleaved ICY metadata makes iOS report silence.
+        "Icy-MetaData": "0",
+      },
     });
 
     if (!res.ok || !res.body) {
@@ -35,6 +37,9 @@ export async function GET(request: Request) {
     for (const name of PASSTHROUGH_HEADERS) {
       const value = res.headers.get(name);
       if (value) headers.set(name, value);
+    }
+    if (!headers.get("content-type")) {
+      headers.set("Content-Type", "audio/mpeg");
     }
     headers.set("Cache-Control", "no-store, no-cache, must-revalidate");
     headers.set("X-Accel-Buffering", "no");

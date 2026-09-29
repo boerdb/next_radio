@@ -19,6 +19,8 @@ const withPWA = withPWAInit({
         urlPattern: ({ sameOrigin, url }: { sameOrigin: boolean; url: URL }) => {
           if (!sameOrigin || !url.pathname.startsWith("/api/")) return false;
           if (url.pathname.startsWith("/api/auth/callback")) return false;
+          // Audio must bypass the service worker; iOS stays silent if the SW handles it.
+          if (url.pathname.startsWith("/api/live-stream")) return false;
           return true;
         },
         handler: "NetworkOnly",

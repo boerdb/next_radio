@@ -2,8 +2,11 @@ import type { Station } from "./types";
 
 export const NPO_STREAM_URL = "https://icecast.omroep.nl/radio6-bb-mp3";
 
-/** Public stream for Bens Web Radio Live when the app is not on the LAN. */
+/** Public stream for Bens Web Radio Live. Playback uses the internal encoder instead. */
 export const LIVE_STREAM_PUBLIC_URL = "https://benswebradio.nl/radio";
+
+/** Same-origin proxy to the internal live encoder (HTTPS, works on iPhone). */
+export const LIVE_STREAM_PATH = "/api/live-stream";
 
 /** Direct PlayIt/RSAS on LAN — browser on HTTP app or server-side upstream. */
 export const LIVE_STREAM_DIRECT_BASE =
