@@ -1,6 +1,6 @@
 # Bens Music – Radio PWA
 
-Next.js PWA voor Bens Web Radio met Azuracast-streams, NPO Soul & Jazz, live stream en weer (Harlingen).
+Next.js PWA voor Bens Web Radio Live, NPO Soul & Jazz en weer (Harlingen).
 
 ## Vereisten
 
@@ -27,7 +27,6 @@ npm install
 cp .env.example .env.local
 # Bewerk .env.local:
 #   OPENWEATHER_API_KEY=...
-#   NEXT_PUBLIC_AZURACAST_URL=https://benswebradio.nl
 
 npm run build
 npm start
@@ -40,8 +39,10 @@ De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS
 | Variabele | Verplicht | Beschrijving |
 |-----------|-----------|--------------|
 | `OPENWEATHER_API_KEY` | Aanbevolen | OpenWeather API-key voor weer Harlingen |
-| `NEXT_PUBLIC_AZURACAST_URL` | Nee | Standaard `https://benswebradio.nl` |
+| `NEXT_PUBLIC_LIVE_STREAM_DIRECT` | Nee | Interne stream op het LAN. Standaard `http://192.168.1.81:8000/radio` |
 | `NEXT_PUBLIC_WEATHER_ICON_BASE_URL` | Nee | Eigen weericonen (static), zie `public/weather-icons/README.md` |
+
+Bens Web Radio Live speelt op het LAN direct de interne stream. Daarbuiten is het adres `https://benswebradio.nl`.
 
 ### Publieke URL (Cloudflare tunnel)
 

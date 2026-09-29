@@ -66,7 +66,6 @@ export async function GET(request: NextRequest) {
     const art = await resolveArtwork(
       artist,
       title,
-      null,
       station.defaultArt ?? null,
     );
 

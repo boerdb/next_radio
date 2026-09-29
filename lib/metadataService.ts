@@ -1,8 +1,4 @@
-import {
-  getStationShortcode,
-  isAzuracastStation,
-  usesIcyStreamMetadata,
-} from "./stations";
+import { usesIcyStreamMetadata } from "./stations";
 import {
   isLoadingPlaceholder,
   loadingPlaceholder,
@@ -155,9 +151,7 @@ export class MetadataService {
   private async fetch(station: Station): Promise<void> {
     try {
       let url: string;
-      if (isAzuracastStation(station.stationApiId)) {
-        url = `/api/now-playing?station=${getStationShortcode(station.stationApiId)}`;
-      } else if (station.id === "live") {
+      if (station.id === "live") {
         url = "/api/live-metadata";
       } else if (usesIcyStreamMetadata(station.id)) {
         url = `/api/icy-metadata?id=${encodeURIComponent(station.id)}`;

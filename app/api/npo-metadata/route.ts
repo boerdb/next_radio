@@ -20,7 +20,6 @@ export async function GET() {
     const art = await resolveArtwork(
       artist,
       title,
-      null,
       npoStation?.defaultArt ?? null,
     );
 

@@ -39,7 +39,6 @@ export async function GET() {
         : await resolveArtwork(
             displayArtist,
             displayTitle,
-            null,
             liveStation?.defaultArt ?? null,
           );
 

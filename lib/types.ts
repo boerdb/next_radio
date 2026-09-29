@@ -1,6 +1,5 @@
 export interface Station {
   id: string;
-  stationApiId: number;
   name: string;
   streamUrl: string;
   defaultArt?: string;

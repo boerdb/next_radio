@@ -31,10 +31,9 @@ const withPWA = withPWAInit({
         // Never cache radio streams (long-lived ICY connections break with SW caches).
         urlPattern: ({ url }: { url: URL }) => {
           const host = url.hostname;
-          if (host === "stream.benswebradio.nl") return true;
+          if (host === "stream.benswebradio.nl" || host === "benswebradio.nl") return true;
           if (host === "192.168.1.81") return true;
           if (host === "192.168.1.232") return true;
-          if (host === "benswebradio.nl" && url.pathname.startsWith("/listen/")) return true;
           if (host === "icecast.omroep.nl") return true;
           if (host.endsWith("181fm.com") || host.includes("cdnstream1.com")) return true;
           if (host.includes("streamtheworld.com")) return true;

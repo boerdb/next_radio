@@ -1,4 +1,3 @@
-import { KNOWN_AZURA_DEFAULT_ART } from "./stations";
 import { trackArtKey } from "./trackKey";
 
 const MB_USER_AGENT = "BensMusicPWA/1.0 (https://benswebradio.nl)";
@@ -65,11 +64,6 @@ function setCachedArtwork(artist: string, title: string, url: string | null): vo
     if (oldest) artCache.delete(oldest);
   }
   artCache.set(key, { url, expires: Date.now() + ART_CACHE_TTL_MS });
-}
-
-export function isGenericAzuraArt(url: string | null | undefined): boolean {
-  if (!url?.trim()) return true;
-  return KNOWN_AZURA_DEFAULT_ART.test(url.trim());
 }
 
 export async function lookupItunesCoverArt(
@@ -175,26 +169,20 @@ export async function findGenericCoverArt(
 export async function resolveArtwork(
   artist: string,
   title: string,
-  azuraArt?: string | null,
   fallback?: string | null,
 ): Promise<string | null> {
   const normalizedFallback = normalizeArtworkUrl(fallback);
-  const normalizedAzuraArt = normalizeArtworkUrl(azuraArt);
-  const usableAzuraArt =
-    normalizedAzuraArt && !isGenericAzuraArt(normalizedAzuraArt)
-      ? normalizedAzuraArt
-      : null;
 
   const cached = getCachedArtwork(artist, title);
-  if (cached && cached !== normalizedFallback && cached !== usableAzuraArt) {
+  if (cached && cached !== normalizedFallback) {
     return cached;
   }
-  if (cached && (cached === normalizedFallback || cached === usableAzuraArt)) {
+  if (cached && cached === normalizedFallback) {
     artCache.delete(trackArtKey(artist, title));
   }
 
   const generic = await findGenericCoverArt(artist, title);
-  const resolved = normalizeArtworkUrl(generic) ?? usableAzuraArt ?? normalizedFallback ?? null;
+  const resolved = normalizeArtworkUrl(generic) ?? normalizedFallback ?? null;
   if (generic && resolved) {
     setCachedArtwork(artist, title, resolved);
   }
