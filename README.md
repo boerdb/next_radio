@@ -42,7 +42,7 @@ De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS
 | `NEXT_PUBLIC_LIVE_STREAM_DIRECT` | Nee | Interne stream op het LAN. Standaard `http://192.168.1.81:8000/radio` |
 | `NEXT_PUBLIC_WEATHER_ICON_BASE_URL` | Nee | Eigen weericonen (static), zie `public/weather-icons/README.md` |
 
-Bens Web Radio Live speelt op het LAN direct de interne stream. Daarbuiten is het adres `https://benswebradio.nl`.
+Bens Web Radio Live speelt op het LAN direct de interne stream. Daarbuiten is het adres `https://benswebradio.nl/radio`.
 
 ### Publieke URL (Cloudflare tunnel)
 
