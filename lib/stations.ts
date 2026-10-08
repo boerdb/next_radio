@@ -1,7 +1,5 @@
 import type { Station } from "./types";
 
-export const NPO_STREAM_URL = "https://icecast.omroep.nl/radio6-bb-mp3";
-
 /** Public stream for Bens Web Radio Live. Playback uses the internal encoder instead. */
 export const LIVE_STREAM_PUBLIC_URL = "https://benswebradio.nl/radio";
 
@@ -38,9 +36,16 @@ export const STATIONS: Station[] = [
     playbackVolume: 0.75,
   },
   {
-    id: "nposoul",
-    name: "NPO Soul & Jazz",
-    streamUrl: NPO_STREAM_URL,
+    id: "npoblend",
+    name: "NPO Blend",
+    streamUrl: "https://icecast.omroep.nl/npoblend-bb-mp3",
+  },
+  {
+    id: "radio10soul",
+    name: "Radio 10 Soul & Jazz",
+    streamUrl:
+      "https://playerservices.streamtheworld.com/api/livestream-redirect/TLPSTR04.mp3",
+    defaultArt: "/stations/radio10-soul.png",
   },
   {
     id: "truernb181",
@@ -60,7 +65,8 @@ export const STATIONS: Station[] = [
 ];
 
 const ICY_METADATA_STATION_IDS = new Set([
-  "nposoul",
+  "npoblend",
+  "radio10soul",
   "truernb181",
   "gotradio-rnb",
   "gotradio-urban",

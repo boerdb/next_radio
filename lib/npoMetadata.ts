@@ -126,7 +126,3 @@ export async function fetchIcyStreamTitle(streamUrl: string): Promise<string> {
   return streamTitle;
 }
 
-export async function fetchNpoStreamTitle(): Promise<string> {
-  const { NPO_STREAM_URL } = await import("./stations");
-  return fetchIcyStreamTitle(NPO_STREAM_URL);
-}

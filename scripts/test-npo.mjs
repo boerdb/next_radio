@@ -5,7 +5,7 @@ function parseStreamTitle(block) {
   return match?.[1]?.trim() ?? "";
 }
 
-const url = "https://icecast.omroep.nl/radio6-bb-mp3";
+const url = "https://icecast.omroep.nl/npoblend-bb-mp3";
 
 https
   .get(url, { headers: { "Icy-MetaData": "1", "User-Agent": "BensMusic/1.0" } }, (res) => {

@@ -11,7 +11,7 @@ export function loadingPlaceholder(station: Station): NowPlaying {
   return {
     artist: station.name,
     title: "Even geduld...",
-    art: APP_ICON,
+    art: station.defaultArt ?? APP_ICON,
     elapsed: 0,
     duration: 0,
     listeners: 0,

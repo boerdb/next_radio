@@ -1,6 +1,6 @@
 # Bens Music – Radio PWA
 
-Next.js PWA voor Bens Web Radio Live, NPO Soul & Jazz en weer (Harlingen).
+Next.js PWA voor Bens Web Radio Live, NPO Blend, Radio 10 Soul & Jazz en weer (Harlingen).
 
 ## Vereisten
 
