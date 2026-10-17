@@ -76,9 +76,9 @@ button:disabled {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
-/* Spelerbalk dicht bij de onderrand: op iPhone (34px home-indicatorzone) blijft 12px over. */
+/* Spelerbalk dicht bij de onderrand: op iPhone (34px home-indicatorzone) blijft 22px over. */
 .player-safe-bottom {
-  padding-bottom: max(0.5rem, calc(env(safe-area-inset-bottom) - 1.375rem));
+  padding-bottom: max(0.5rem, calc(env(safe-area-inset-bottom) - 0.75rem));
 }
 
 /* Paarse sfeer-gloed achter de app */
