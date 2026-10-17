@@ -44,7 +44,8 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
-  overflow: hidden;
+  /* Geen overflow: hidden: de iOS-fix hieronder heeft de pagina-hoogte nodig. */
+  overscroll-behavior: none;
 }
 
 button {
@@ -58,6 +59,17 @@ button:disabled {
 :focus-visible {
   outline: 2px solid var(--primary-tint);
   outline-offset: 2px;
+}
+
+/*
+ * iOS 26-beginschermapp (black-translucent + viewport-fit=cover): het venster is een
+ * statusbalk-hoogte te kort zolang de pagina korter is dan het scherm (WebKit 301108).
+ * Een iets hogere html geeft het volle venster; min() voorkomt scrollen zonder de bug.
+ */
+@media (display-mode: standalone) {
+  html {
+    min-height: min(100lvh, calc(100% + env(safe-area-inset-top)));
+  }
 }
 
 .safe-bottom {
