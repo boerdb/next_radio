@@ -12,25 +12,25 @@ export function AppHeader({ onOpenSettings }: AppHeaderProps) {
   const { updateAvailable } = usePwaUpdate();
 
   return (
-    <header className="shrink-0 pt-[env(safe-area-inset-top)]">
+    <header className="shrink-0 border-b border-[var(--primary-shade)] bg-[var(--primary)] pt-[env(safe-area-inset-top)] shadow-lg shadow-black/30">
       <div className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-3 md:px-8">
         <div className="flex items-center gap-2.5">
-          <span className="relative h-8 w-8 overflow-hidden rounded-lg ring-1 ring-white/15 shadow-md shadow-[var(--primary-glow)]">
+          <span className="relative h-8 w-8 overflow-hidden rounded-lg ring-1 ring-white/25 shadow-md shadow-black/25">
             <Image src={APP_ICON} alt="" fill sizes="32px" className="object-cover" />
           </span>
           <h1 className="text-[17px] font-semibold tracking-tight text-white">
-            Bens <span className="text-[var(--primary-soft)]">Music</span>
+            Bens Music
           </h1>
         </div>
         <button
           type="button"
           onClick={onOpenSettings}
-          className="relative flex h-10 w-10 items-center justify-center rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+          className="relative flex h-10 w-10 items-center justify-center rounded-full text-white/90 transition-colors hover:bg-white/15 hover:text-white"
           aria-label={updateAvailable ? "Instellingen (update beschikbaar)" : "Instellingen"}
         >
           <GearIcon />
           {updateAvailable && (
-            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-[var(--background)] bg-[var(--primary-tint)]" />
+            <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full border-2 border-[var(--primary)] bg-[var(--secondary)]" />
           )}
         </button>
       </div>
