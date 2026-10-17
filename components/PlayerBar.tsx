@@ -45,7 +45,7 @@ export function PlayerBar({
         : "Selecteer een station";
 
   return (
-    <footer className="shrink-0 border-t border-white/[0.06] bg-[var(--toolbar)]/85 px-4 pt-2.5 backdrop-blur-xl player-safe-bottom">
+    <footer className="shrink-0 border-t border-white/[0.06] bg-[var(--toolbar)]/85 px-4 pt-2 backdrop-blur-xl player-safe-bottom">
       <div className="mx-auto grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-3 md:px-4">
         {/* Links: huidig station (vanaf tablet) */}
         <div className="hidden min-w-0 items-center gap-3 md:flex">
@@ -79,7 +79,7 @@ export function PlayerBar({
             type="button"
             onClick={onTogglePause}
             aria-label={isPlaying ? "Pauzeren" : "Afspelen"}
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary-tint)] to-[var(--primary-shade)] text-white shadow-lg shadow-[var(--primary-glow)] transition-transform hover:scale-105 active:scale-95"
+            className="flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[var(--primary-tint)] to-[var(--primary-shade)] text-white shadow-lg shadow-[var(--primary-glow)] transition-transform hover:scale-105 active:scale-95"
           >
             {loading ? (
               <span className="h-6 w-6 animate-spin rounded-full border-[2.5px] border-white border-t-transparent" />

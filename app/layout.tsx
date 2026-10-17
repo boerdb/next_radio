@@ -15,6 +15,10 @@ export const metadata: Metadata = {
     icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
   },
+  // Next zet alleen "mobile-web-app-capable"; oudere iOS-versies willen de apple-variant.
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
 };
 
 export const viewport: Viewport = {
