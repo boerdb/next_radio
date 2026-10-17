@@ -48,6 +48,7 @@ export const STATIONS: Station[] = [
     streamUrl:
       "https://playerservices.streamtheworld.com/api/livestream-redirect/TLPSTR04.mp3",
     defaultArt: "/stations/radio10-soul.png",
+    tritonMount: "TLPSTR04",
   },
   {
     id: "truernb181",

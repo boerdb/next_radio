@@ -6,6 +6,7 @@ import {
   parseArtistTitle,
 } from "@/lib/npoMetadata";
 import { fetchSublimeNowPlaying } from "@/lib/sublimeMetadata";
+import { fetchTritonNowPlaying } from "@/lib/tritonMetadata";
 import { getStationById } from "@/lib/stations";
 import type { NowPlaying } from "@/lib/types";
 
@@ -41,6 +42,25 @@ export async function GET(request: NextRequest) {
       };
 
       return NextResponse.json(result);
+    }
+
+    if (station.tritonMount) {
+      const triton = await fetchTritonNowPlaying(station.tritonMount).catch(
+        () => null,
+      );
+      if (triton) {
+        const result: NowPlaying = {
+          artist: triton.artist,
+          title: triton.title,
+          art: await resolveArtwork(
+            triton.artist,
+            triton.title,
+            station.defaultArt ?? null,
+          ),
+          isLive: false,
+        };
+        return NextResponse.json(result);
+      }
     }
 
     const streamTitle = await fetchIcyStreamTitle(station.streamUrl);
