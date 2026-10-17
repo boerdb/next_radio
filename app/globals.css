@@ -38,7 +38,8 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: var(--background);
+  /* Kleur van de spelerbalk: valt weg als iOS onderin toch een strook toont. */
+  background: var(--toolbar);
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;

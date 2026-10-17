@@ -57,6 +57,31 @@ export function RadioApp() {
     playStation(station);
   };
 
+  // iOS-beginschermapp met doorzichtige statusbalk krijgt een venster dat een
+  // statusbalk-hoogte te kort is (zwarte strook onderin). Gebruik dan de schermhoogte.
+  useEffect(() => {
+    const root = document.documentElement;
+    const nav = navigator as Navigator & { standalone?: boolean };
+    const update = () => {
+      const standalone =
+        nav.standalone === true ||
+        window.matchMedia("(display-mode: standalone)").matches;
+      const portrait = window.matchMedia("(orientation: portrait)").matches;
+      if (standalone && portrait && window.screen.height > window.innerHeight) {
+        root.style.setProperty("--app-height", `${window.screen.height}px`);
+      } else {
+        root.style.removeProperty("--app-height");
+      }
+    };
+    update();
+    window.addEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
+  }, []);
+
   // Sneltoetsen: spatie = afspelen/pauze, pijltjes = vorige/volgende, M = dempen
   useEffect(() => {
     const onKeyDown = (event: globalThis.KeyboardEvent) => {
@@ -80,7 +105,7 @@ export function RadioApp() {
   });
 
   return (
-    <div className="app-backdrop fixed inset-0 flex flex-col">
+    <div className="app-backdrop fixed inset-x-0 top-0 flex h-[var(--app-height,100dvh)] flex-col">
       <AppHeader
         onOpenSettings={() => setSettingsOpen(true)}
         updateAvailable={updateAvailable}

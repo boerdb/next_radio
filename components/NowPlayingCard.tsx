@@ -51,7 +51,7 @@ export function NowPlayingCard({
 
   return (
     <section
-      className="flex shrink-0 flex-col items-center px-6 pb-4 pt-1 md:py-8"
+      className="flex shrink-0 flex-col items-center px-6 pb-4 pt-5 md:py-8"
       aria-label="Nu aan het spelen"
     >
       <div className="relative mb-5 aspect-square w-[min(62vw,32dvh,300px)] md:w-full md:max-w-[360px]">
