@@ -80,7 +80,7 @@ export function RadioApp() {
   });
 
   return (
-    <div className="app-backdrop flex h-dvh flex-col">
+    <div className="app-backdrop fixed inset-0 flex flex-col">
       <AppHeader
         onOpenSettings={() => setSettingsOpen(true)}
         updateAvailable={updateAvailable}

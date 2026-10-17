@@ -63,6 +63,11 @@ button:disabled {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
+/* Spelerbalk dicht bij de onderrand; mag een klein stukje in de home-indicatorzone. */
+.player-safe-bottom {
+  padding-bottom: max(0.625rem, calc(env(safe-area-inset-bottom) - 0.75rem));
+}
+
 /* Paarse sfeer-gloed achter de app */
 .app-backdrop {
   background:

@@ -45,7 +45,7 @@ export function PlayerBar({
         : "Selecteer een station";
 
   return (
-    <footer className="shrink-0 border-t border-white/[0.06] bg-[var(--toolbar)]/85 px-4 pt-3 backdrop-blur-xl safe-bottom">
+    <footer className="shrink-0 border-t border-white/[0.06] bg-[var(--toolbar)]/85 px-4 pt-2.5 backdrop-blur-xl player-safe-bottom">
       <div className="mx-auto grid w-full max-w-5xl grid-cols-[1fr_auto_1fr] items-center gap-3 md:px-4">
         {/* Links: huidig station (vanaf tablet) */}
         <div className="hidden min-w-0 items-center gap-3 md:flex">
