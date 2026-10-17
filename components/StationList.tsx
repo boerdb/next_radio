@@ -158,17 +158,17 @@ const AVATAR_GRADIENTS = [
 ];
 
 function StationAvatar({ station }: { station: Station }) {
-  const local = station.defaultArt?.startsWith("/");
-  if (station.defaultArt) {
+  const logo = station.logo ?? station.defaultArt;
+  if (logo) {
     return (
       <span className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-[var(--card)] ring-1 ring-white/10">
         <Image
-          src={station.defaultArt}
+          src={logo}
           alt=""
           fill
           sizes="48px"
           className="object-cover"
-          unoptimized={!local}
+          unoptimized={!logo.startsWith("/") || logo.endsWith(".svg")}
         />
       </span>
     );

@@ -48,6 +48,7 @@ export function getDeferredInstallPrompt(): BeforeInstallPromptEvent | null {
 
 export function clearDeferredInstallPrompt(): void {
   deferredPrompt = null;
+  notifyListeners();
 }
 
 export function subscribeInstallPrompt(listener: InstallPromptListener): () => void {

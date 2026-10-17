@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { usePwaUpdate } from "@/hooks/usePwaUpdate";
 import { AppHeader } from "./AppHeader";
 import { NowPlayingCard } from "./NowPlayingCard";
 import { PlayerBar } from "./PlayerBar";
@@ -23,6 +24,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 export function RadioApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
+  const { updateAvailable, applyUpdate, dismissUpdate } = usePwaUpdate();
   const {
     stations,
     currentStation,
@@ -31,7 +33,6 @@ export function RadioApp() {
     loading,
     volume,
     muted,
-    connectionMode,
     playStation,
     togglePause,
     toggleMute,
@@ -80,7 +81,10 @@ export function RadioApp() {
 
   return (
     <div className="app-backdrop flex h-dvh flex-col">
-      <AppHeader onOpenSettings={() => setSettingsOpen(true)} />
+      <AppHeader
+        onOpenSettings={() => setSettingsOpen(true)}
+        updateAvailable={updateAvailable}
+      />
 
       <main className="mx-auto flex min-h-0 w-full max-w-5xl flex-1 flex-col md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-center md:gap-10 md:px-8">
         <NowPlayingCard
@@ -88,7 +92,6 @@ export function RadioApp() {
           nowPlaying={nowPlaying}
           isPlaying={isPlaying}
           loading={loading}
-          connectionMode={connectionMode}
         />
         <StationList
           stations={stations}
@@ -116,6 +119,9 @@ export function RadioApp() {
       <SettingsSheet
         open={settingsOpen}
         onClose={closeSettings}
+        updateAvailable={updateAvailable}
+        onApplyUpdate={applyUpdate}
+        onDismissUpdate={dismissUpdate}
       />
     </div>
   );

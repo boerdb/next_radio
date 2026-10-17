@@ -1,27 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { shouldShowAndroidInstallBanner } from "@/lib/isAndroidInstallable";
+import { useAndroidInstallPrompt } from "@/hooks/useAndroidInstallPrompt";
 import {
   dismissIosInstallBanner,
+  isIosDevice,
   shouldShowIosInstallBanner,
 } from "@/lib/isIosInstallable";
-import { usePwaUpdate } from "@/hooks/usePwaUpdate";
 
 interface SettingsSheetProps {
   open: boolean;
   onClose: () => void;
+  updateAvailable: boolean;
+  onApplyUpdate: () => void;
+  onDismissUpdate: () => void;
 }
 
-export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
-  const { updateAvailable, applyUpdate, dismissUpdate } = usePwaUpdate();
-  const [showIosInstall, setShowIosInstall] = useState(false);
-  const [showAndroidInstall, setShowAndroidInstall] = useState(false);
+export function SettingsSheet({
+  open,
+  onClose,
+  updateAvailable,
+  onApplyUpdate,
+  onDismissUpdate,
+}: SettingsSheetProps) {
+  const android = useAndroidInstallPrompt();
+  const [iosInstallHidden, setIosInstallHidden] = useState(false);
 
   useEffect(() => {
     if (!open) return;
-    setShowIosInstall(shouldShowIosInstallBanner());
-    setShowAndroidInstall(shouldShowAndroidInstallBanner());
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
@@ -30,6 +36,10 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
   }, [open, onClose]);
 
   if (!open) return null;
+
+  // Alleen client-side gerenderd (sheet is dicht bij de eerste render).
+  const isIos = isIosDevice();
+  const showIosInstall = !iosInstallHidden && shouldShowIosInstallBanner();
 
   return (
     <div
@@ -60,14 +70,13 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
           <section className="mb-4 rounded-2xl border border-[var(--primary)]/50 bg-[var(--background)] p-4">
             <p className="mb-1 font-medium text-white">Nieuwe versie</p>
             <p className="mb-3 text-xs text-[var(--text-muted)]">
-              Vernieuw als je niet aan het luisteren bent — anders stopt de
-              muziek kort.
+              Vernieuwen herlaadt de app; de muziek stopt daarbij even.
             </p>
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => {
-                  applyUpdate();
+                  onApplyUpdate();
                   onClose();
                 }}
                 className="flex-1 rounded-lg bg-[var(--primary)] py-2 text-sm font-semibold text-white hover:bg-[var(--primary-tint)]"
@@ -76,7 +85,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
               </button>
               <button
                 type="button"
-                onClick={dismissUpdate}
+                onClick={onDismissUpdate}
                 className="rounded-lg border border-[var(--border)] px-4 py-2 text-sm text-[var(--text-muted)]"
               >
                 Later
@@ -101,7 +110,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
               type="button"
               onClick={() => {
                 dismissIosInstallBanner();
-                setShowIosInstall(false);
+                setIosInstallHidden(true);
               }}
               className="mt-3 text-xs text-[var(--text-muted)] underline"
             >
@@ -110,24 +119,43 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
           </section>
         )}
 
-        {showAndroidInstall && (
+        {android.visible && (
           <section className="mb-4 rounded-2xl border border-[var(--primary)]/40 bg-[var(--background)] p-4">
             <p className="mb-2 font-medium text-white">Op Android installeren</p>
-            <p className="text-sm text-[var(--text-muted)]">
-              Menu <span aria-hidden>(⋮)</span> →{" "}
-              <strong className="text-white">App installeren</strong> of{" "}
-              <strong className="text-white">Toevoegen aan startscherm</strong>.
-            </p>
+            {android.canInstall ? (
+              <button
+                type="button"
+                onClick={() => void android.install()}
+                className="w-full rounded-lg bg-[var(--primary)] py-2 text-sm font-semibold text-white hover:bg-[var(--primary-tint)]"
+              >
+                App installeren
+              </button>
+            ) : (
+              <p className="text-sm text-[var(--text-muted)]">
+                Menu <span aria-hidden>(⋮)</span> →{" "}
+                <strong className="text-white">App installeren</strong> of{" "}
+                <strong className="text-white">Toevoegen aan startscherm</strong>.
+              </p>
+            )}
+            <button
+              type="button"
+              onClick={android.dismiss}
+              className="mt-3 text-xs text-[var(--text-muted)] underline"
+            >
+              Niet meer tonen
+            </button>
           </section>
         )}
 
-        <section className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--text-muted)]">
-          <p className="mb-1 font-medium text-white">Achtergrond luisteren</p>
-          <p>
-            Op iPhone kan muziek stoppen als je andere apps sluit in de
-            app-switcher. Laat Bens Music open staan voor het beste resultaat.
-          </p>
-        </section>
+        {isIos && (
+          <section className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--text-muted)]">
+            <p className="mb-1 font-medium text-white">Achtergrond luisteren</p>
+            <p>
+              Op iPhone kan muziek stoppen als je Bens Music wegveegt in de
+              app-switcher. Laat de app openstaan voor het beste resultaat.
+            </p>
+          </section>
+        )}
 
         <section className="hidden rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--text-muted)] md:block">
           <p className="mb-2 font-medium text-white">Sneltoetsen</p>
@@ -140,6 +168,10 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
             <dd>Geluid aan / uit</dd>
           </dl>
         </section>
+
+        <p className="mt-2 text-center text-xs text-[var(--text-subtle)]">
+          Bens Music · Bens Web Radio en meer
+        </p>
       </div>
     </div>
   );

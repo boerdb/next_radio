@@ -4,7 +4,7 @@ import {
 } from "./stations";
 
 const LAN_HOST =
-  /^(192\.168\.|10\.|172\.(1[6-9]|2\d?|3[01])\.|localhost|127\.)/;
+  /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.|localhost|127\.)/;
 
 /** Direct RSAS on LAN when the app is served over HTTP; otherwise the internal proxy. */
 export type LiveStreamMode = "direct-lan" | "proxy";

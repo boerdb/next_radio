@@ -1,7 +1,3 @@
-import {
-  connectionModeForStation,
-  type ConnectionMode,
-} from "./connectionStatus";
 import { MetadataService } from "./metadataService";
 import {
   setupMediaSessionHandlers,
@@ -19,6 +15,8 @@ const LIVE_STALL_GRACE_MS = 45_000;
 const LIVE_ERROR_GRACE_MS = 8_000;
 const MAX_RECONNECT_ATTEMPTS = 8;
 const IOS_BACKGROUND_RESUME_MS = 500;
+/** Na langer pauzeren loopt de buffer achter op de uitzending: stream opnieuw openen. */
+const STALE_RESUME_MS = 10_000;
 
 export interface EngineState {
   currentStation: Station | null;
@@ -27,7 +25,6 @@ export interface EngineState {
   loading: boolean;
   volume: number;
   muted: boolean;
-  connectionMode: ConnectionMode;
 }
 
 type StateListener = (state: EngineState) => void;
@@ -40,7 +37,6 @@ function defaultState(): EngineState {
     loading: false,
     volume: 1,
     muted: false,
-    connectionMode: "idle",
   };
 }
 
@@ -58,6 +54,7 @@ export class AudioEngine {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private backgroundResumeTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
+  private pausedAt: number | null = null;
   private liveErrorGraceTimer: ReturnType<typeof setTimeout> | null = null;
   private liveStallGraceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -119,14 +116,6 @@ export class AudioEngine {
     return () => this.listeners.delete(listener);
   }
 
-  getState(): EngineState {
-    return this.state;
-  }
-
-  getAudioElement(): HTMLAudioElement {
-    return this.audio;
-  }
-
   playStation(station: Station): void {
     if (this.state.currentStation?.id === station.id && this.state.isPlaying) {
       this.userPause();
@@ -138,6 +127,7 @@ export class AudioEngine {
     this.clearBackgroundResumeTimer();
     this.clearLiveGraceTimers();
     this.reconnectAttempt = 0;
+    this.pausedAt = null;
     this.intendsPlay = true;
 
     const nowPlaying = this.metadata.initialNowPlaying(station);
@@ -145,7 +135,6 @@ export class AudioEngine {
       currentStation: station,
       nowPlaying,
       loading: true,
-      connectionMode: connectionModeForStation(station.id),
     });
 
     this.metadata.start(station);
@@ -195,14 +184,23 @@ export class AudioEngine {
   }
 
   private userPlay(): void {
+    if (!this.state.currentStation) return;
     this.intendsPlay = true;
     this.clearBackgroundResumeTimer();
     this.reconnectAttempt = 0;
+    const pausedFor = this.pausedAt ? Date.now() - this.pausedAt : 0;
+    this.pausedAt = null;
+    if (pausedFor > STALE_RESUME_MS || this.audio.error) {
+      this.reloadStream(true);
+      return;
+    }
+    this.patch({ loading: true });
     void this.audio.play().catch(() => this.patch({ loading: false }));
   }
 
   private userPause(): void {
     this.intendsPlay = false;
+    this.pausedAt = Date.now();
     this.clearBackgroundResumeTimer();
     this.clearStallTimer();
     this.clearReconnectTimer();
@@ -310,7 +308,6 @@ export class AudioEngine {
     this.clearStallTimer();
     this.clearReconnectTimer();
     this.patch({ isPlaying: true, loading: false });
-    setPlaybackActive(true);
 
     const station = this.state.currentStation;
     if (station) this.metadata.onPlaybackStarted(station);
@@ -323,8 +320,8 @@ export class AudioEngine {
   }
 
   private onPause(): void {
-    this.patch({ isPlaying: false });
-    setPlaybackActive(false);
+    // Bij een stationswissel of iOS-onderbreking blijft "laden" staan.
+    this.patch(this.intendsPlay ? { isPlaying: false } : { isPlaying: false, loading: false });
     if (this.intendsPlay) this.scheduleBackgroundResume();
     updateMediaSession(
       this.state.nowPlaying,
@@ -438,9 +435,4 @@ export class AudioEngine {
       this.backgroundResumeTimer = null;
     }
   }
-}
-
-export function getAudioEngine(): AudioEngine | null {
-  if (typeof window === "undefined") return null;
-  return AudioEngine.getInstance();
 }

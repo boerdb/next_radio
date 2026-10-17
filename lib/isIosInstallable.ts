@@ -1,6 +1,5 @@
 import { isStandalonePwa } from "@/lib/pwa";
 
-export { isStandalonePwa };
 
 const DISMISS_KEY = "bens-music-ios-install-dismissed";
 

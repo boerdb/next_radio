@@ -3,6 +3,8 @@ export interface Station {
   name: string;
   streamUrl: string;
   defaultArt?: string;
+  /** Vierkant stationslogo voor de stationlijst (valt terug op defaultArt). */
+  logo?: string;
   /** Multiplier on slider volume (e.g. 0.75 if stream is louder than others). */
   playbackVolume?: number;
 }
@@ -11,19 +13,5 @@ export interface NowPlaying {
   artist: string;
   title: string;
   art: string | null;
-  elapsed: number;
-  duration: number;
-  listeners: number;
   isLive: boolean;
-}
-
-export interface WeatherData {
-  location: string;
-  temp: number;
-  feelsLike: number;
-  description: string;
-  icon: string;
-  windSpeed: number;
-  /** Unix ms when OpenWeather was last fetched (server cache miss). */
-  updatedAt?: number;
 }

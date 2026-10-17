@@ -23,9 +23,6 @@ export async function GET(request: NextRequest) {
     artist: station.name,
     title: "Live",
     art: station.defaultArt ?? null,
-    elapsed: 0,
-    duration: 0,
-    listeners: 0,
     isLive: false,
   };
 
@@ -40,9 +37,6 @@ export async function GET(request: NextRequest) {
         artist: sublime.artist,
         title: sublime.title,
         art: sublime.albumArt ?? station.defaultArt ?? null,
-        elapsed: 0,
-        duration: 0,
-        listeners: 0,
         isLive: false,
       };
 
@@ -63,19 +57,16 @@ export async function GET(request: NextRequest) {
       defaultArtist: station.name,
       defaultTitle: "Live",
     });
-    const art = await resolveArtwork(
-      artist,
-      title,
-      station.defaultArt ?? null,
-    );
+    // Alleen een hoes zoeken bij "Artiest - Titel"; losse slogans geven willekeurige covers.
+    const art =
+      artist && title
+        ? await resolveArtwork(artist, title, station.defaultArt ?? null)
+        : (station.defaultArt ?? null);
 
     const result: NowPlaying = {
       artist: artist || station.name,
       title: title || "Live",
       art,
-      elapsed: 0,
-      duration: 0,
-      listeners: 0,
       isLive: false,
     };
 

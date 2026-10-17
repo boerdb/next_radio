@@ -36,7 +36,6 @@ export function PlayerProvider({ children }: { children: ReactNode }) {
     loading: false,
     volume: 1,
     muted: false,
-    connectionMode: "idle",
   }));
 
   useEffect(() => {

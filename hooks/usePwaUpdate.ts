@@ -47,10 +47,6 @@ function shouldOfferUpdate(reg: ServiceWorkerRegistration): boolean {
   return true;
 }
 
-function hideUpdateBanner(setUpdateAvailable: (v: boolean) => void): void {
-  setUpdateAvailable(false);
-}
-
 export function usePwaUpdate() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
@@ -76,13 +72,8 @@ export function usePwaUpdate() {
     };
 
     const reloadForUpdate = () => {
+      // Alleen herladen als de gebruiker zelf "Nu vernieuwen" koos.
       if (!refreshingRef.current) return;
-      if (!safeToReloadForUpdate()) {
-        refreshingRef.current = false;
-        clearReloadFallback();
-        clearWaitingListener();
-        return;
-      }
       clearReloadFallback();
       clearWaitingListener();
       window.location.reload();
@@ -101,7 +92,7 @@ export function usePwaUpdate() {
         return;
       }
 
-      hideUpdateBanner(setUpdateAvailable);
+      setUpdateAvailable(false);
     };
 
     const trackInstalling = (
@@ -166,7 +157,7 @@ export function usePwaUpdate() {
       window.clearTimeout(reloadFallbackRef.current);
     }
     reloadFallbackRef.current = window.setTimeout(() => {
-      if (!refreshingRef.current || !safeToReloadForUpdate()) return;
+      if (!refreshingRef.current) return;
       window.location.reload();
     }, RELOAD_FALLBACK_MS);
   }, []);
@@ -176,11 +167,7 @@ export function usePwaUpdate() {
     const waiting = reg?.waiting;
 
     markUpdateDismissed();
-    hideUpdateBanner(setUpdateAvailable);
-
-    if (!safeToReloadForUpdate()) {
-      return;
-    }
+    setUpdateAvailable(false);
 
     if (!waiting) {
       window.location.reload();
@@ -208,7 +195,7 @@ export function usePwaUpdate() {
     markUpdateDismissed();
     const waiting = registrationRef.current?.waiting;
     if (waiting) markWorkerUpdateApplied(waiting.scriptURL);
-    hideUpdateBanner(setUpdateAvailable);
+    setUpdateAvailable(false);
   }, []);
 
   return { updateAvailable, applyUpdate, dismissUpdate };

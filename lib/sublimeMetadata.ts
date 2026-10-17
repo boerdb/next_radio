@@ -14,7 +14,6 @@ export type SublimeNowPlaying = {
   artist: string;
   title: string;
   albumArt: string | null;
-  duration: number;
 };
 
 export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null> {
@@ -39,7 +38,6 @@ export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null
     artist?: string;
     title?: string;
     albumArt?: string;
-    duration?: number;
   };
 
   const artist = data.artist?.trim() ?? "";
@@ -61,7 +59,6 @@ export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null
     artist: artist || "Sublime FM",
     title: title || "Live",
     albumArt,
-    duration: typeof data.duration === "number" ? data.duration : 0,
   };
 
   cache = { value: result, at: Date.now() };

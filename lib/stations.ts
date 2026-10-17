@@ -24,6 +24,7 @@ export const STATIONS: Station[] = [
   {
     id: "live",
     name: "Bens Web Radio Live",
+    logo: "/stations/benswebradio.svg",
     streamUrl: LIVE_STREAM_PUBLIC_URL,
   },
   {
@@ -38,6 +39,7 @@ export const STATIONS: Station[] = [
   {
     id: "npoblend",
     name: "NPO Blend",
+    logo: "/stations/npo-blend.svg",
     streamUrl: "https://icecast.omroep.nl/npoblend-bb-mp3",
   },
   {
@@ -50,16 +52,19 @@ export const STATIONS: Station[] = [
   {
     id: "truernb181",
     name: "181.fm True R&B",
+    logo: "/stations/181fm.png",
     streamUrl: "https://listen.181fm.com/181-rnb_128k.mp3",
   },
   {
     id: "gotradio-rnb",
     name: "GotRadio R&B Classics",
+    logo: "/stations/gotradio-rnb.png",
     streamUrl: "https://pureplay.cdnstream1.com/6023_128.mp3",
   },
   {
     id: "gotradio-urban",
     name: "Urban Lounge",
+    logo: "/stations/gotradio-urban.png",
     streamUrl: "https://pureplay.cdnstream1.com/6053_128.mp3",
   },
 ];

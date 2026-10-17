@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import {
   dismissAndroidInstallBanner,
   shouldShowAndroidInstallBanner,
@@ -11,23 +11,16 @@ import {
   subscribeInstallPrompt,
 } from "@/lib/pwaInstall";
 
+const hasInstallPrompt = () => getDeferredInstallPrompt() !== null;
+const noInstallPromptOnServer = () => false;
+
 export function useAndroidInstallPrompt() {
-  const [visible, setVisible] = useState(false);
-  const [canInstall, setCanInstall] = useState(false);
-
-  useEffect(() => {
-    if (!shouldShowAndroidInstallBanner()) return;
-
-    const sync = () => {
-      setCanInstall(getDeferredInstallPrompt() !== null);
-    };
-
-    setVisible(true);
-    sync();
-
-    const unsubscribe = subscribeInstallPrompt(sync);
-    return unsubscribe;
-  }, []);
+  const [visible, setVisible] = useState(shouldShowAndroidInstallBanner);
+  const canInstall = useSyncExternalStore(
+    subscribeInstallPrompt,
+    hasInstallPrompt,
+    noInstallPromptOnServer,
+  );
 
   const install = useCallback(async () => {
     const prompt = getDeferredInstallPrompt();
@@ -40,14 +33,12 @@ export function useAndroidInstallPrompt() {
       setVisible(false);
     }
     clearDeferredInstallPrompt();
-    setCanInstall(false);
   }, []);
 
   const dismiss = useCallback(() => {
     dismissAndroidInstallBanner();
     clearDeferredInstallPrompt();
     setVisible(false);
-    setCanInstall(false);
   }, []);
 
   useEffect(() => {
@@ -56,10 +47,5 @@ export function useAndroidInstallPrompt() {
     return () => window.removeEventListener("appinstalled", onInstalled);
   }, [dismiss]);
 
-  return {
-    visible,
-    canInstall,
-    install,
-    dismiss,
-  };
+  return { visible, canInstall, install, dismiss };
 }

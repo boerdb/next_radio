@@ -12,9 +12,6 @@ export function loadingPlaceholder(station: Station): NowPlaying {
     artist: station.name,
     title: "Even geduld...",
     art: station.defaultArt ?? APP_ICON,
-    elapsed: 0,
-    duration: 0,
-    listeners: 0,
     isLive: station.id === "live",
   };
 }
@@ -29,9 +26,6 @@ export function stationLiveNowPlaying(station: Station): NowPlaying {
     artist: station.name,
     title: "Live",
     art: station.defaultArt ?? null,
-    elapsed: 0,
-    duration: 0,
-    listeners: 0,
     isLive: station.id === "live",
   };
 }

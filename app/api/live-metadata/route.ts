@@ -28,27 +28,20 @@ export async function GET() {
     const displayTitle = title || "Live";
     const trackKey = trackArtKey(displayArtist, displayTitle);
 
-    if (trackKey && trackKey === lastLiveTrackKey && lastLiveResult) {
+    if (trackKey === lastLiveTrackKey && lastLiveResult) {
       return NextResponse.json(lastLiveResult);
     }
 
-    const liveStation = getStationById("live");
-    const art =
-      trackKey && trackKey === lastLiveTrackKey && lastLiveResult?.art
-        ? lastLiveResult.art
-        : await resolveArtwork(
-            displayArtist,
-            displayTitle,
-            liveStation?.defaultArt ?? null,
-          );
+    const fallbackArt = getStationById("live")?.defaultArt ?? null;
+    // Zonder echte titel geen hoes zoeken: "Bens Web Radio Live Live" levert willekeurige covers op.
+    const art = title
+      ? await resolveArtwork(artist, title, fallbackArt)
+      : fallbackArt;
 
     const result: NowPlaying = {
       artist: displayArtist,
       title: displayTitle,
       art,
-      elapsed: 0,
-      duration: 0,
-      listeners: 0,
       isLive: true,
     };
 

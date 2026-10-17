@@ -32,7 +32,7 @@ export function PlayerBar({
   onPrevious,
 }: PlayerBarProps) {
   const effectiveVolume = muted ? 0 : volume;
-  const thumb = nowPlaying?.art ?? station?.defaultArt ?? APP_ICON;
+  const thumb = nowPlaying?.art ?? station?.defaultArt ?? station?.logo ?? APP_ICON;
   const subtitle =
     nowPlaying?.title &&
     nowPlaying.title !== station?.name &&
@@ -58,7 +58,7 @@ export function PlayerBar({
                   fill
                   sizes="44px"
                   className="object-cover"
-                  unoptimized={thumb.startsWith("http")}
+                  unoptimized={thumb.startsWith("http") || thumb.endsWith(".svg")}
                 />
               </span>
               <div className="min-w-0">

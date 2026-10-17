@@ -99,10 +99,6 @@ export class MetadataService {
     this.pendingTrack = null;
   }
 
-  getCurrent(): NowPlaying | null {
-    return this.current;
-  }
-
   private emit(data: NowPlaying): void {
     this.current = data;
     this.listener?.(data);
@@ -165,6 +161,8 @@ export class MetadataService {
       const res = await fetch(url, { cache: "no-store" });
       if (!res.ok) return;
       const data = (await res.json()) as NowPlaying | null;
+      // Antwoord van een vorig station negeren (gewisseld tijdens de request).
+      if (this.station?.id !== station.id) return;
       if (!data) {
         this.apply(stationLiveNowPlaying(station), station);
         return;

@@ -1,6 +1,6 @@
 # Bens Music – Radio PWA
 
-Next.js PWA voor Bens Web Radio Live, NPO Blend, Radio 10 Soul & Jazz en weer (Harlingen).
+Next.js PWA voor Bens Web Radio Live, Sublime FM, NPO Blend, Radio 10 Soul & Jazz en meer R&B-zenders.
 
 ## Vereisten
 
@@ -12,7 +12,6 @@ Next.js PWA voor Bens Web Radio Live, NPO Blend, Radio 10 Soul & Jazz en weer (H
 ```bash
 npm install
 cp .env.example .env.local
-# Vul OPENWEATHER_API_KEY in .env.local
 npm run dev
 ```
 
@@ -25,8 +24,6 @@ git clone <jouw-repo-url>
 cd netxt_radio
 npm install
 cp .env.example .env.local
-# Bewerk .env.local:
-#   OPENWEATHER_API_KEY=...
 
 npm run build
 npm start
@@ -38,19 +35,17 @@ De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS
 
 | Variabele | Verplicht | Beschrijving |
 |-----------|-----------|--------------|
-| `OPENWEATHER_API_KEY` | Aanbevolen | OpenWeather API-key voor weer Harlingen |
 | `NEXT_PUBLIC_LIVE_STREAM_DIRECT` | Nee | Interne stream op het LAN. Standaard `http://192.168.1.81:8000/radio` |
-| `NEXT_PUBLIC_WEATHER_ICON_BASE_URL` | Nee | Eigen weericonen (static), zie `public/weather-icons/README.md` |
 
 Bens Web Radio Live speelt op een HTTP-adres in het LAN direct de interne stream. Via de HTTPS-app (wifi en mobiel) speelt dezelfde interne stream door `/api/live-stream`, zodat iPhone geluid heeft.
 
 ### Publieke URL (Cloudflare tunnel)
 
-De app kan o.a. bereikbaar zijn op **https://app.benswebradio.nl** (tunnel naar je server). Zet daar HTTPS op (vereist voor PWA). Optionele weericonen: zelfde host, bv. `NEXT_PUBLIC_WEATHER_ICON_BASE_URL=https://app.benswebradio.nl/weather-icons` en bestanden in `public/weather-icons/`.
+De app kan o.a. bereikbaar zijn op **https://app.benswebradio.nl** (tunnel naar je server). Zet daar HTTPS op (vereist voor PWA).
 
 ### PM2 (poort 3002)
 
-Zet `OPENWEATHER_API_KEY` in `.env.local` of `.env.production` in de projectmap (zelfde map als `package.json`). PM2 leest die bestanden via `ecosystem.config.cjs`.
+Zet eventuele variabelen in `.env.local` of `.env.production` in de projectmap (zelfde map als `package.json`). PM2 leest die bestanden via `ecosystem.config.cjs`.
 
 ```bash
 npm run build
@@ -63,9 +58,9 @@ Handige commando’s:
 
 ```bash
 pm2 status
-pm2 logs bens-music
-pm2 restart bens-music
-pm2 stop bens-music
+pm2 logs next_radio
+pm2 restart next_radio
+pm2 stop next_radio
 ```
 
 **Nginx-voorbeeld** (proxy naar poort 3002):

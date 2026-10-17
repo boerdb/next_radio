@@ -1,15 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { usePwaUpdate } from "@/hooks/usePwaUpdate";
 import { APP_ICON } from "@/lib/appIcon";
 
 interface AppHeaderProps {
   onOpenSettings: () => void;
+  updateAvailable: boolean;
 }
 
-export function AppHeader({ onOpenSettings }: AppHeaderProps) {
-  const { updateAvailable } = usePwaUpdate();
+export function AppHeader({ onOpenSettings, updateAvailable }: AppHeaderProps) {
 
   return (
     <header className="shrink-0 border-b border-[var(--primary-shade)] bg-[var(--primary)] pt-[env(safe-area-inset-top)] shadow-lg shadow-black/30">
