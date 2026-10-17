@@ -32,7 +32,7 @@ export function connectionStatusLabel(
     case "proxy":
       return "Intern · via server";
     case "external":
-      return "Extern stream";
+      return "Externe stream";
     default:
       return "Kies een station";
   }

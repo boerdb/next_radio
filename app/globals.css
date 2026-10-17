@@ -1,20 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #121212;
+  --background: #0e0b12;
   --foreground: #ffffff;
-  --card: #1e1e1e;
-  --toolbar: #1a1a1a;
-  --border: #333333;
+  --card: #1a1620;
+  --card-hover: #221d2a;
+  --toolbar: #15111b;
+  --border: #2c2634;
+  --border-strong: #3a3245;
   --primary: #9c27b0;
-  --primary-shade: #89229b;
-  --primary-tint: #a63ab8;
+  --primary-shade: #7b1f8c;
+  --primary-tint: #b04ec2;
+  --primary-soft: #d7a4e2;
+  --primary-glow: rgba(156, 39, 176, 0.45);
   --secondary: #00bcd4;
   --tertiary: #ff4081;
   --success: #4caf50;
   --warning: #ffc107;
   --danger: #f44336;
-  --text-muted: #a0a0a0;
+  --text-muted: #a69cb0;
+  --text-subtle: #776d82;
 }
 
 @theme inline {
@@ -37,40 +42,77 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
   overflow: hidden;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary-tint);
+  outline-offset: 2px;
 }
 
 .safe-bottom {
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
 }
 
-input[type="range"] {
+/* Paarse sfeer-gloed achter de app */
+.app-backdrop {
+  background:
+    radial-gradient(120% 60% at 50% -10%, rgba(156, 39, 176, 0.38), transparent 60%),
+    radial-gradient(80% 40% at 100% 100%, rgba(156, 39, 176, 0.12), transparent 70%),
+    var(--background);
+}
+
+/* Volumeslider met paarse vulling (--fill wordt inline gezet) */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
   height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--primary-tint) 0%,
+    var(--primary-tint) var(--fill, 100%),
+    var(--border-strong) var(--fill, 100%),
+    var(--border-strong) 100%
+  );
   cursor: pointer;
 }
 
-.station-item:active,
-.station-chip:active {
-  transform: scale(0.98);
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.35);
+  transition: transform 0.15s ease;
 }
 
-.station-picker-scroll {
-  scroll-snap-type: y mandatory;
-  scrollbar-width: none;
+.volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.35);
 }
 
-.station-picker-scroll::-webkit-scrollbar {
-  display: none;
+.volume-slider:active::-webkit-slider-thumb {
+  transform: scale(1.2);
 }
 
-.station-picker-item:active {
-  opacity: 0.85;
-}
-
-.station-picker-scroll:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: 0.75rem;
+.station-item:active {
+  transform: scale(0.985);
 }
 
 .sr-only-audio {
@@ -101,11 +143,11 @@ input[type="range"] {
 }
 
 .scrollbar-themed.is-scrolling {
-  scrollbar-color: var(--border) transparent;
+  scrollbar-color: var(--border-strong) transparent;
 }
 
 .scrollbar-themed.is-scrolling::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-strong);
 }
 
 .scrollbar-themed.is-scrolling::-webkit-scrollbar-thumb:hover {
@@ -126,4 +168,94 @@ input[type="range"] {
 
 .album-art-enter {
   animation: album-art-fade-in 380ms ease;
+}
+
+/* Equalizer-balkjes voor het spelende station */
+@keyframes eq-bounce {
+  0%,
+  100% {
+    transform: scaleY(0.3);
+  }
+
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.eq-bar {
+  transform-origin: bottom;
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+.eq-bar:nth-child(2) {
+  animation-delay: -0.3s;
+  animation-duration: 0.75s;
+}
+
+.eq-bar:nth-child(3) {
+  animation-delay: -0.55s;
+  animation-duration: 1.05s;
+}
+
+.eq-paused .eq-bar {
+  animation-play-state: paused;
+  transform: scaleY(0.3);
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.6);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgba(244, 67, 54, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
+  }
+}
+
+.live-dot {
+  animation: live-pulse 1.6s ease-out infinite;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.sheet-enter {
+  animation: sheet-up 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.overlay-enter {
+  animation: fade-in 200ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar,
+  .live-dot,
+  .album-art-enter,
+  .sheet-enter,
+  .overlay-enter {
+    animation: none;
+  }
 }

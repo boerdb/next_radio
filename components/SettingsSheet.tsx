@@ -22,28 +22,34 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
     if (!open) return;
     setShowIosInstall(shouldShowIosInstallBanner());
     setShowAndroidInstall(shouldShowAndroidInstallBanner());
-  }, [open]);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
 
   if (!open) return null;
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 sm:items-center"
+      className="overlay-enter fixed inset-0 z-[100] flex items-end justify-center bg-black/65 backdrop-blur-sm sm:items-center"
       role="dialog"
       aria-modal="true"
       aria-label="Instellingen"
       onClick={onClose}
     >
       <div
-        className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-[var(--border)] bg-[var(--card)] p-5 shadow-2xl sm:rounded-2xl safe-bottom"
+        className="sheet-enter max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-white/10 bg-[var(--card)] p-5 pt-3 shadow-2xl sm:rounded-3xl sm:pt-5 safe-bottom"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20 sm:hidden" aria-hidden />
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-white">Instellingen</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-white/10 hover:text-white"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-[var(--text-muted)] transition-colors hover:bg-white/10 hover:text-white"
             aria-label="Sluiten"
           >
             <CloseIcon />
@@ -51,7 +57,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
         </div>
 
         {updateAvailable && (
-          <section className="mb-4 rounded-xl border border-[var(--secondary)]/40 bg-[var(--background)] p-4">
+          <section className="mb-4 rounded-2xl border border-[var(--primary)]/50 bg-[var(--background)] p-4">
             <p className="mb-1 font-medium text-white">Nieuwe versie</p>
             <p className="mb-3 text-xs text-[var(--text-muted)]">
               Vernieuw als je niet aan het luisteren bent — anders stopt de
@@ -64,7 +70,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
                   applyUpdate();
                   onClose();
                 }}
-                className="flex-1 rounded-lg bg-[var(--secondary)] py-2 text-sm font-semibold text-[var(--background)]"
+                className="flex-1 rounded-lg bg-[var(--primary)] py-2 text-sm font-semibold text-white hover:bg-[var(--primary-tint)]"
               >
                 Nu vernieuwen
               </button>
@@ -80,7 +86,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
         )}
 
         {showIosInstall && (
-          <section className="mb-4 rounded-xl border border-[var(--primary)]/40 bg-[var(--background)] p-4">
+          <section className="mb-4 rounded-2xl border border-[var(--primary)]/40 bg-[var(--background)] p-4">
             <p className="mb-2 font-medium text-white">Op iPhone installeren</p>
             <ol className="list-decimal space-y-1 pl-4 text-sm text-[var(--text-muted)]">
               <li>
@@ -105,7 +111,7 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
         )}
 
         {showAndroidInstall && (
-          <section className="mb-4 rounded-xl border border-[var(--primary)]/40 bg-[var(--background)] p-4">
+          <section className="mb-4 rounded-2xl border border-[var(--primary)]/40 bg-[var(--background)] p-4">
             <p className="mb-2 font-medium text-white">Op Android installeren</p>
             <p className="text-sm text-[var(--text-muted)]">
               Menu <span aria-hidden>(⋮)</span> →{" "}
@@ -115,15 +121,35 @@ export function SettingsSheet({ open, onClose }: SettingsSheetProps) {
           </section>
         )}
 
-        <section className="rounded-xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--text-muted)]">
+        <section className="mb-4 rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--text-muted)]">
           <p className="mb-1 font-medium text-white">Achtergrond luisteren</p>
           <p>
             Op iPhone kan muziek stoppen als je andere apps sluit in de
             app-switcher. Laat Bens Music open staan voor het beste resultaat.
           </p>
         </section>
+
+        <section className="hidden rounded-2xl border border-[var(--border)] bg-[var(--background)] p-4 text-sm text-[var(--text-muted)] md:block">
+          <p className="mb-2 font-medium text-white">Sneltoetsen</p>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5">
+            <dt><Kbd>Spatie</Kbd></dt>
+            <dd>Afspelen / pauzeren</dd>
+            <dt><Kbd>↑</Kbd> <Kbd>↓</Kbd></dt>
+            <dd>Vorig / volgend station</dd>
+            <dt><Kbd>M</Kbd></dt>
+            <dd>Geluid aan / uit</dd>
+          </dl>
+        </section>
       </div>
     </div>
+  );
+}
+
+function Kbd({ children }: { children: React.ReactNode }) {
+  return (
+    <kbd className="inline-flex min-w-6 items-center justify-center rounded-md border border-white/15 bg-white/5 px-1.5 py-0.5 font-sans text-xs text-white">
+      {children}
+    </kbd>
   );
 }
 
