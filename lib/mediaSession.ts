@@ -51,10 +51,14 @@ async function refreshArtwork(source: string): Promise<void> {
   let images: MediaImage[];
   let blobUrls: string[] = [];
   try {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = source;
-    await img.decode();
+    // Geen img.decode(): die blijft hangen zolang de pagina niet getekend wordt.
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("image failed to load"));
+      image.src = source;
+    });
     const blobs = await Promise.all(
       ARTWORK_SIZES.map((size) => renderArtwork(img, size)),
     );
