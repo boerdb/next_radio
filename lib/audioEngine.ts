@@ -97,6 +97,7 @@ export class AudioEngine {
     this.audio.addEventListener("error", () => this.onError());
     this.audio.addEventListener("stalled", () => this.onStalled());
     this.audio.addEventListener("ended", () => this.onEnded());
+    this.audio.addEventListener("timeupdate", () => this.metadata.pollIfDue());
 
     setupMediaSessionHandlers(
       () => this.userPlay(),
@@ -315,6 +316,7 @@ export class AudioEngine {
     updateMediaSession(
       this.state.nowPlaying,
       station?.name ?? "Bens Music",
+      true,
       true,
     );
   }

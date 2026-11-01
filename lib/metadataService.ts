@@ -11,6 +11,7 @@ import {
   withRecalledArt,
 } from "./nowPlayingSessionCache";
 import { isLiveStreamStation } from "./liveStreamUrl";
+import { isPlaybackActive } from "./playbackGate";
 import type { NowPlaying, Station } from "./types";
 
 const METADATA_POLL_MS = 5000;
@@ -48,6 +49,8 @@ export class MetadataService {
   private pollTimer: ReturnType<typeof setInterval> | null = null;
   private trackChangeTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingTrack: NowPlaying | null = null;
+  private pendingSince = 0;
+  private lastPollAt = 0;
   private current: NowPlaying | null = null;
   private station: Station | null = null;
   private listener: MetadataListener | null = null;
@@ -70,22 +73,43 @@ export class MetadataService {
     this.current = this.initialNowPlaying(station);
     this.emit(this.current);
 
-    const poll = () => {
-      if (
-        isLiveStreamStation(station.id) &&
-        typeof document !== "undefined" &&
-        document.visibilityState === "hidden"
-      ) {
-        return;
-      }
-      void this.fetch(station);
-    };
+    this.poll(station);
+    this.pollTimer = setInterval(
+      () => this.poll(station),
+      this.pollInterval(station),
+    );
+  }
 
-    poll();
-    const interval = isLiveStreamStation(station.id)
+  /**
+   * Timers kunnen stilvallen als het scherm op slot gaat; de audio loopt dan door.
+   * De audio-engine roept dit daarom ook aan vanuit de lopende audio.
+   */
+  pollIfDue(): void {
+    const station = this.station;
+    if (!station || document.visibilityState !== "hidden") return;
+    if (Date.now() - this.lastPollAt >= this.pollInterval(station)) {
+      this.poll(station);
+    }
+  }
+
+  private pollInterval(station: Station): number {
+    return isLiveStreamStation(station.id)
       ? METADATA_POLL_LIVE_MS
       : METADATA_POLL_MS;
-    this.pollTimer = setInterval(poll, interval);
+  }
+
+  private poll(station: Station): void {
+    // Wel doorgaan als er geluisterd wordt: titel en hoes op het vergrendelscherm en via Bluetooth.
+    if (
+      isLiveStreamStation(station.id) &&
+      typeof document !== "undefined" &&
+      document.visibilityState === "hidden" &&
+      !isPlaybackActive()
+    ) {
+      return;
+    }
+    this.lastPollAt = Date.now();
+    void this.fetch(station);
   }
 
   stop(): void {
@@ -132,16 +156,26 @@ export class MetadataService {
       return;
     }
 
+    const now = Date.now();
+    if (!this.pendingTrack || !isSameTrack(this.pendingTrack, enriched)) {
+      this.pendingSince = now;
+    }
     this.pendingTrack = enriched;
     if (this.trackChangeTimer) clearTimeout(this.trackChangeTimer);
-    this.trackChangeTimer = setTimeout(() => {
+    const flush = () => {
       if (this.pendingTrack) {
         persistNowPlaying(station, this.pendingTrack);
         this.emit(this.pendingTrack);
       }
       this.pendingTrack = null;
       this.trackChangeTimer = null;
-    }, TRACK_CHANGE_DELAY_MS);
+    };
+    // Lag de timer stil en is de wachttijd al om, dan niet opnieuw wachten.
+    if (now - this.pendingSince >= TRACK_CHANGE_DELAY_MS) {
+      flush();
+      return;
+    }
+    this.trackChangeTimer = setTimeout(flush, TRACK_CHANGE_DELAY_MS);
   }
 
   private async fetch(station: Station): Promise<void> {
