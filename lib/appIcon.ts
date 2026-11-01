@@ -7,11 +7,16 @@ export function isAppIconArt(art: string | null | undefined): boolean {
   return art === APP_ICON || art.endsWith("/icon-512.png");
 }
 
+/** Plaatje van het station zelf, voor als er geen hoes van het nummer is. */
+export function stationFallbackArt(station: Station): string | null {
+  return station.defaultArt ?? station.logo ?? null;
+}
+
 export function loadingPlaceholder(station: Station): NowPlaying {
   return {
     artist: station.name,
     title: "Even geduld...",
-    art: station.defaultArt ?? APP_ICON,
+    art: stationFallbackArt(station) ?? APP_ICON,
     isLive: station.id === "live",
   };
 }
@@ -25,7 +30,7 @@ export function stationLiveNowPlaying(station: Station): NowPlaying {
   return {
     artist: station.name,
     title: "Live",
-    art: station.defaultArt ?? null,
+    art: stationFallbackArt(station),
     isLive: station.id === "live",
   };
 }

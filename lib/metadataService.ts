@@ -2,6 +2,7 @@ import { usesIcyStreamMetadata } from "./stations";
 import {
   isLoadingPlaceholder,
   loadingPlaceholder,
+  stationFallbackArt,
   stationLiveNowPlaying,
 } from "./appIcon";
 import {
@@ -33,8 +34,7 @@ function enrichArt(
     art:
       withCache.art ??
       (prev && isSameTrack(prev, withCache) ? prev.art : null) ??
-      station.defaultArt ??
-      null,
+      stationFallbackArt(station),
   };
 }
 
