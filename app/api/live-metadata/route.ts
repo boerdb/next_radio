@@ -11,6 +11,14 @@ export const dynamic = "force-dynamic";
 let lastLiveTrackKey = "";
 let lastLiveResult: NowPlaying | null = null;
 
+// benswebradio.nl (de losse webspeler) haalt hier de hoes op: openbare gegevens,
+// dus elke herkomst mag lezen.
+function json(data: NowPlaying | null) {
+  return NextResponse.json(data, {
+    headers: { "Access-Control-Allow-Origin": "*" },
+  });
+}
+
 export async function GET() {
   try {
     const res = await fetch(LIVE_METADATA_URL, {
@@ -19,7 +27,7 @@ export async function GET() {
     });
 
     if (!res.ok) {
-      return NextResponse.json(null);
+      return json(null);
     }
 
     const raw = await res.text();
@@ -29,7 +37,7 @@ export async function GET() {
     const trackKey = trackArtKey(displayArtist, displayTitle);
 
     if (trackKey === lastLiveTrackKey && lastLiveResult) {
-      return NextResponse.json(lastLiveResult);
+      return json(lastLiveResult);
     }
 
     const fallbackArt = getStationById("live")?.defaultArt ?? null;
@@ -48,8 +56,8 @@ export async function GET() {
     lastLiveTrackKey = trackKey;
     lastLiveResult = result;
 
-    return NextResponse.json(result);
+    return json(result);
   } catch {
-    return NextResponse.json(null);
+    return json(null);
   }
 }
