@@ -51,3 +51,6 @@ public/fallback-*.js
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# vaste hoezenlijst (wordt op de server bijgehouden)
+/data/

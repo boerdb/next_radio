@@ -1,10 +1,10 @@
+import { getStoredArtwork, storeArtwork } from "./artStore";
 import { trackArtKey } from "./trackKey";
 
 const MB_USER_AGENT = "BensMusicPWA/1.0 (https://benswebradio.nl)";
-const ART_CACHE_TTL_MS = 60 * 60 * 1000;
-const ART_CACHE_MAX = 120;
 
-const artCache = new Map<string, { url: string; expires: number }>();
+/** Houdt bij of een zoekvraag mislukte (storing, time-out) in plaats van "niets gevonden". */
+type LookupStatus = { failed: boolean };
 
 function normalizeArtworkUrl(url: string | null | undefined): string | null {
   const value = url?.trim();
@@ -45,30 +45,10 @@ function buildLookupCandidates(artist: string, title: string): Array<{ artist: s
   return candidates.filter((c) => c.artist || c.title);
 }
 
-function getCachedArtwork(artist: string, title: string): string | null {
-  const key = trackArtKey(artist, title);
-  const entry = artCache.get(key);
-  if (!entry) return null;
-  if (Date.now() > entry.expires) {
-    artCache.delete(key);
-    return null;
-  }
-  return entry.url;
-}
-
-function setCachedArtwork(artist: string, title: string, url: string | null): void {
-  if (!url) return;
-  const key = trackArtKey(artist, title);
-  if (artCache.size >= ART_CACHE_MAX && !artCache.has(key)) {
-    const oldest = artCache.keys().next().value;
-    if (oldest) artCache.delete(oldest);
-  }
-  artCache.set(key, { url, expires: Date.now() + ART_CACHE_TTL_MS });
-}
-
 export async function lookupItunesCoverArt(
   artist: string,
   title: string,
+  status?: LookupStatus,
 ): Promise<string | null> {
   const term = encodeURIComponent(`${artist} ${title}`.trim());
   if (!term || term === "%20") return null;
@@ -80,7 +60,10 @@ export async function lookupItunesCoverArt(
       next: { revalidate: 86400 },
       signal: AbortSignal.timeout(5000),
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      if (status) status.failed = true;
+      return null;
+    }
     const data = (await res.json()) as {
       results?: { artworkUrl100?: string }[];
     };
@@ -88,6 +71,7 @@ export async function lookupItunesCoverArt(
     if (!art) return null;
     return normalizeArtworkUrl(art.replace("100x100bb", "600x600bb"));
   } catch {
+    if (status) status.failed = true;
     return null;
   }
 }
@@ -95,6 +79,7 @@ export async function lookupItunesCoverArt(
 export async function lookupMusicBrainzCoverArt(
   artist: string,
   title: string,
+  status?: LookupStatus,
 ): Promise<string | null> {
   const query = encodeURIComponent(`recording:"${title}" AND artist:"${artist}"`);
   const searchUrl = `https://musicbrainz.org/ws/2/recording?query=${query}&fmt=json&limit=1`;
@@ -105,7 +90,10 @@ export async function lookupMusicBrainzCoverArt(
       next: { revalidate: 86400 },
       signal: AbortSignal.timeout(5000),
     });
-    if (!searchRes.ok) return null;
+    if (!searchRes.ok) {
+      if (status) status.failed = true;
+      return null;
+    }
 
     const searchData = (await searchRes.json()) as {
       recordings?: { releases?: { id: string }[] }[];
@@ -121,7 +109,11 @@ export async function lookupMusicBrainzCoverArt(
         signal: AbortSignal.timeout(5000),
       },
     );
-    if (!artRes.ok) return null;
+    if (!artRes.ok) {
+      // 404 = deze uitgave heeft geen hoes; al het andere is een storing.
+      if (status && artRes.status !== 404) status.failed = true;
+      return null;
+    }
 
     const artData = (await artRes.json()) as {
       images?: {
@@ -140,30 +132,39 @@ export async function lookupMusicBrainzCoverArt(
       null
     );
   } catch {
+    if (status) status.failed = true;
     return null;
   }
 }
 
-export async function findGenericCoverArt(
+type GenericResult = {
+  url: string | null;
+  /** Mag dit antwoord voorgoed onthouden worden? */
+  certain: boolean;
+};
+
+async function findGenericCoverArt(
   artist: string,
   title: string,
-): Promise<string | null> {
-  if (!artist.trim() && !title.trim()) return null;
+): Promise<GenericResult> {
+  if (!artist.trim() && !title.trim()) return { url: null, certain: false };
 
+  const status: LookupStatus = { failed: false };
   const candidates = buildLookupCandidates(artist, title);
   for (const candidate of candidates) {
-    const [itunes, musicBrainz] = await Promise.allSettled([
-      lookupItunesCoverArt(candidate.artist, candidate.title),
-      lookupMusicBrainzCoverArt(candidate.artist, candidate.title),
+    const [itunes, musicBrainz] = await Promise.all([
+      lookupItunesCoverArt(candidate.artist, candidate.title, status),
+      lookupMusicBrainzCoverArt(candidate.artist, candidate.title, status),
     ]);
 
-    if (itunes.status === "fulfilled" && itunes.value) return itunes.value;
-    if (musicBrainz.status === "fulfilled" && musicBrainz.value) {
-      return musicBrainz.value;
-    }
+    if (itunes) return { url: itunes, certain: true };
+    // Een hoes van MusicBrainz terwijl Apple haperde: wel tonen, maar de
+    // volgende keer opnieuw zoeken, want Apple heeft meestal de betere.
+    if (musicBrainz) return { url: musicBrainz, certain: !status.failed };
   }
 
-  return null;
+  // "Niet gevonden" alleen onthouden als elke zoekvraag echt antwoord gaf.
+  return { url: null, certain: !status.failed };
 }
 
 export async function resolveArtwork(
@@ -171,20 +172,14 @@ export async function resolveArtwork(
   title: string,
   fallback?: string | null,
 ): Promise<string | null> {
-  const normalizedFallback = normalizeArtworkUrl(fallback);
+  const normalizedFallback = normalizeArtworkUrl(fallback) ?? null;
 
-  const cached = getCachedArtwork(artist, title);
-  if (cached && cached !== normalizedFallback) {
-    return cached;
-  }
-  if (cached && cached === normalizedFallback) {
-    artCache.delete(trackArtKey(artist, title));
-  }
+  const stored = await getStoredArtwork(artist, title);
+  if (stored) return stored;
+  if (stored === null) return normalizedFallback;
 
-  const generic = await findGenericCoverArt(artist, title);
-  const resolved = normalizeArtworkUrl(generic) ?? normalizedFallback ?? null;
-  if (generic && resolved) {
-    setCachedArtwork(artist, title, resolved);
-  }
-  return resolved;
+  const { url, certain } = await findGenericCoverArt(artist, title);
+  const resolved = normalizeArtworkUrl(url);
+  if (certain) storeArtwork(artist, title, resolved);
+  return resolved ?? normalizedFallback;
 }
