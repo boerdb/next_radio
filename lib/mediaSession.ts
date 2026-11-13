@@ -42,6 +42,17 @@ function renderArtwork(img: HTMLImageElement, size: number): Promise<Blob> {
   });
 }
 
+function loadImage(src: string): Promise<HTMLImageElement> {
+  // Geen img.decode(): die blijft hangen zolang de pagina niet getekend wordt.
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("image failed to load"));
+    image.src = src;
+  });
+}
+
 /**
  * Maakt vierkante JPEG's op maat, zodat de opgegeven afmetingen altijd kloppen
  * en ook SVG-logo's op het vergrendelscherm en via Bluetooth zichtbaar zijn.
@@ -51,14 +62,14 @@ async function refreshArtwork(source: string): Promise<void> {
   let images: MediaImage[];
   let blobUrls: string[] = [];
   try {
-    // Geen img.decode(): die blijft hangen zolang de pagina niet getekend wordt.
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.crossOrigin = "anonymous";
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error("image failed to load"));
-      image.src = source;
-    });
+    // Een SVG-logo omzetten lukt op de iPhone niet altijd; dan blijft in de auto
+    // de vorige hoes staan. Neem daarom het PNG-plaatje met dezelfde naam, dat
+    // precies dezelfde weg volgt als een gewone hoes.
+    const raster = source.replace(/\.svg($|\?)/i, ".png$1");
+    const img =
+      raster !== source
+        ? await loadImage(raster).catch(() => loadImage(source))
+        : await loadImage(source);
     const blobs = await Promise.all(
       ARTWORK_SIZES.map((size) => renderArtwork(img, size)),
     );
