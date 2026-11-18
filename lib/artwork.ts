@@ -16,6 +16,7 @@ function normalizeArtworkUrl(url: string | null | undefined): string | null {
 
 function cleanLookupText(input: string): string {
   return input
+    .replace(/[`´‘’]/g, "'") // "I`m Coming Out" vindt Apple alleen als "I'm"
     .replace(/\[[^\]]*\]/g, " ")
     .replace(/\([^)]*\)/g, " ")
     .replace(/\b(remaster(?:ed)?|version|edit|mono|stereo)\b/gi, " ")
@@ -53,7 +54,22 @@ export async function lookupItunesCoverArt(
   const term = encodeURIComponent(`${artist} ${title}`.trim());
   if (!term || term === "%20") return null;
 
-  const url = `https://itunes.apple.com/search?term=${term}&entity=song&limit=1`;
+  // Zonder media=music vindt Apple sommige nummers niet (bv. Taylor Swift - Opalite).
+  // De Amerikaanse winkel mist veel Nederlandse nummers en andersom: vraag beide.
+  const [us, nl] = await Promise.all(
+    ITUNES_COUNTRIES.map((country) => lookupItunesIn(term, country, status)),
+  );
+  return us ?? nl;
+}
+
+const ITUNES_COUNTRIES = ["US", "NL"] as const;
+
+async function lookupItunesIn(
+  term: string,
+  country: string,
+  status?: LookupStatus,
+): Promise<string | null> {
+  const url = `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=1&country=${country}`;
 
   try {
     const res = await fetch(url, {
