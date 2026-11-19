@@ -57,19 +57,60 @@ export async function lookupItunesCoverArt(
   // Zonder media=music vindt Apple sommige nummers niet (bv. Taylor Swift - Opalite).
   // De Amerikaanse winkel mist veel Nederlandse nummers en andersom: vraag beide.
   const [us, nl] = await Promise.all(
-    ITUNES_COUNTRIES.map((country) => lookupItunesIn(term, country, status)),
+    ITUNES_COUNTRIES.map((country) =>
+      lookupItunesIn(term, artist, title, country, status),
+    ),
   );
-  return us ?? nl;
+  if (!us && !nl) {
+    // "Kris Kross Amsterdam X Antoon X Sigourney K" vindt Apple niet, alleen de
+    // eerste artiest wel. Nog één keer zoeken met alleen die artiest.
+    const lead = firstArtist(artist).trim();
+    if (lead && lead !== artist.trim()) {
+      return lookupItunesCoverArt(lead, title, status);
+    }
+    return null;
+  }
+  if (!us || !nl) return (us ?? nl)!.url;
+  return us.score >= nl.score ? us.url : nl.url;
 }
 
 const ITUNES_COUNTRIES = ["US", "NL"] as const;
 
+/** Zelfde vergelijking als de losse webspeler, zodat beide dezelfde hoes kiezen. */
+const matchKey = (s: string) =>
+  s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]/g, "");
+const firstArtist = (s: string) =>
+  s.split(/\s+(?:x|&|feat\.?|ft\.?|featuring|vs\.?)\s+|[,;]/i)[0] ?? s;
+
+function scoreItunesHit(
+  hitArtist: string,
+  hitTitle: string,
+  wantArtist: string,
+  wantTitle: string,
+): number {
+  const a = matchKey(hitArtist);
+  const t = matchKey(cleanLookupText(hitTitle));
+  const wa = matchKey(wantArtist);
+  const wt = matchKey(cleanLookupText(wantTitle));
+  const fa = matchKey(firstArtist(hitArtist));
+  const fwa = matchKey(firstArtist(wantArtist));
+  let score = 0;
+  if (a && wa && (a.includes(wa) || wa.includes(a) || (fa && fwa && fa === fwa))) score += 2;
+  if (t && wt && (t.includes(wt) || wt.includes(t))) score += 2;
+  if (t && t === wt) score += 1;
+  return score;
+}
+
 async function lookupItunesIn(
   term: string,
+  artist: string,
+  title: string,
   country: string,
   status?: LookupStatus,
-): Promise<string | null> {
-  const url = `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=1&country=${country}`;
+): Promise<{ url: string; score: number } | null> {
+  // limit=1 geeft bij Apple soms 0 resultaten terwijl er wel treffers zijn
+  // (bv. The Weeknd - Dancing In The Flames); vraag er een paar en kies de beste.
+  const url = `https://itunes.apple.com/search?term=${term}&media=music&entity=song&limit=8&country=${country}`;
 
   try {
     const res = await fetch(url, {
@@ -81,11 +122,18 @@ async function lookupItunesIn(
       return null;
     }
     const data = (await res.json()) as {
-      results?: { artworkUrl100?: string }[];
+      results?: { artworkUrl100?: string; artistName?: string; trackName?: string }[];
     };
-    const art = data.results?.[0]?.artworkUrl100;
-    if (!art) return null;
-    return normalizeArtworkUrl(art.replace("100x100bb", "600x600bb"));
+    let best: { art: string; score: number } | null = null;
+    for (const r of data.results ?? []) {
+      if (!r.artworkUrl100) continue;
+      const score = scoreItunesHit(r.artistName ?? "", r.trackName ?? "", artist, title);
+      if (!best || score > best.score) best = { art: r.artworkUrl100, score };
+    }
+    // Minstens artiest of titel moet kloppen, anders liever het logo dan een verkeerde hoes.
+    if (!best || best.score < 2) return null;
+    const art = normalizeArtworkUrl(best.art.replace(/\/\d+x\d+bb\./, "/600x600bb."));
+    return art ? { url: art, score: best.score } : null;
   } catch {
     if (status) status.failed = true;
     return null;
