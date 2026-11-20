@@ -17,6 +17,14 @@ const MAX_RECONNECT_ATTEMPTS = 8;
 const IOS_BACKGROUND_RESUME_MS = 500;
 /** Na langer pauzeren loopt de buffer achter op de uitzending: stream opnieuw openen. */
 const STALE_RESUME_MS = 10_000;
+/**
+ * Een live MP3-stream speelt na een hapering verder waar hij was: de achterstand
+ * blijft en telt op. Loopt de live-zender meer dan dit achter, dan opnieuw
+ * verbinden zodat hij weer gelijk loopt met de uitzending.
+ */
+const LIVE_MAX_LAG_S = 10;
+/** Niet vaker dan dit terugspringen, anders blijft een slechte verbinding herladen. */
+const LIVE_CATCH_UP_MIN_INTERVAL_MS = 60_000;
 
 export interface EngineState {
   currentStation: Station | null;
@@ -57,6 +65,9 @@ export class AudioEngine {
   private pausedAt: number | null = null;
   private liveErrorGraceTimer: ReturnType<typeof setTimeout> | null = null;
   private liveStallGraceTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Klok en afspeelpositie bij de eerste "playing" na het openen van de stream. */
+  private lagBase: { wallMs: number; mediaS: number } | null = null;
+  private lastCatchUpAt = 0;
 
   static getInstance(): AudioEngine {
     if (typeof window === "undefined") {
@@ -97,7 +108,10 @@ export class AudioEngine {
     this.audio.addEventListener("error", () => this.onError());
     this.audio.addEventListener("stalled", () => this.onStalled());
     this.audio.addEventListener("ended", () => this.onEnded());
-    this.audio.addEventListener("timeupdate", () => this.metadata.pollIfDue());
+    this.audio.addEventListener("timeupdate", () => {
+      this.metadata.pollIfDue();
+      this.catchUpIfBehind();
+    });
 
     setupMediaSessionHandlers(
       () => this.userPlay(),
@@ -140,6 +154,7 @@ export class AudioEngine {
 
     this.metadata.start(station);
     this.audio.preload = isLiveStreamStation(station.id) ? "auto" : "none";
+    this.lagBase = null;
     this.audio.src = streamUrlFor(station, true);
     this.applyVolume();
     void this.audio.play().catch(() => this.patch({ loading: false }));
@@ -191,7 +206,9 @@ export class AudioEngine {
     this.reconnectAttempt = 0;
     const pausedFor = this.pausedAt ? Date.now() - this.pausedAt : 0;
     this.pausedAt = null;
-    if (pausedFor > STALE_RESUME_MS || this.audio.error) {
+    // Live na pauze altijd opnieuw verbinden: verder spelen uit de buffer
+    // betekent achterlopen op de uitzending.
+    if (this.isLivePlayback() || pausedFor > STALE_RESUME_MS || this.audio.error) {
       this.reloadStream(true);
       return;
     }
@@ -217,6 +234,7 @@ export class AudioEngine {
     const station = this.state.currentStation;
     if (!station || !this.intendsPlay) return;
     this.patch({ loading: true });
+    this.lagBase = null;
     this.audio.src = streamUrlFor(station, cacheBust);
     this.audio.load();
     void this.audio.play().catch(() => this.patch({ loading: false }));
@@ -302,7 +320,29 @@ export class AudioEngine {
     this.listeners.forEach((l) => l(this.state));
   }
 
+  /** Hoeveel seconden de live-zender achterloopt sinds het openen van de stream. */
+  liveLagSeconds(): number | null {
+    if (!this.lagBase || !this.isLivePlayback()) return null;
+    const wallS = (Date.now() - this.lagBase.wallMs) / 1000;
+    const mediaS = this.audio.currentTime - this.lagBase.mediaS;
+    return Math.max(0, wallS - mediaS);
+  }
+
+  private catchUpIfBehind(): void {
+    if (!this.intendsPlay || this.audio.paused) return;
+    const lag = this.liveLagSeconds();
+    if (lag === null || lag <= LIVE_MAX_LAG_S) return;
+    if (Date.now() - this.lastCatchUpAt < LIVE_CATCH_UP_MIN_INTERVAL_MS) return;
+    this.lastCatchUpAt = Date.now();
+    this.reloadStream(true);
+  }
+
   private onPlaying(): void {
+    // Alleen de eerste "playing" na het openen telt; na een hapering volgt er
+    // nog een, en dan moet de opgelopen achterstand juist zichtbaar blijven.
+    if (!this.lagBase && this.isLivePlayback()) {
+      this.lagBase = { wallMs: Date.now(), mediaS: this.audio.currentTime };
+    }
     this.clearBackgroundResumeTimer();
     this.clearLiveGraceTimers();
     this.reconnectAttempt = 0;

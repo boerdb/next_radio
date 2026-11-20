@@ -1,12 +1,17 @@
 import {
   LIVE_STREAM_DIRECT_BASE,
-  LIVE_STREAM_PATH,
+  LIVE_STREAM_PUBLIC_URL,
 } from "./stations";
 
 const LAN_HOST =
   /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.|localhost|127\.)/;
 
-/** Direct RSAS on LAN when the app is served over HTTP; otherwise the internal proxy. */
+/**
+ * Direct RSAS on LAN when the app is served over HTTP; otherwise the public
+ * stream on benswebradio.nl. Die gaat van huis via Cloudflare rechtstreeks naar
+ * de luisteraar, net als bij de webspeler. De oude route via /api/live-stream
+ * (op de VPS) maakte een omweg en gaf vaker haperingen.
+ */
 export type LiveStreamMode = "direct-lan" | "proxy";
 
 export function resolveLiveStreamMode(): LiveStreamMode {
@@ -23,7 +28,7 @@ export function resolveLiveStreamUrl(): string {
   if (resolveLiveStreamMode() === "direct-lan") {
     return `${LIVE_STREAM_DIRECT_BASE}?type=.mp3`;
   }
-  return `${LIVE_STREAM_PATH}?type=.mp3`;
+  return `${LIVE_STREAM_PUBLIC_URL}?type=.mp3`;
 }
 
 export function isLiveStreamStation(stationId: string): boolean {
