@@ -9,8 +9,8 @@ const LAN_HOST =
 /**
  * Direct RSAS on LAN when the app is served over HTTP; otherwise the public
  * stream on benswebradio.nl. Die gaat van huis via Cloudflare rechtstreeks naar
- * de luisteraar, net als bij de webspeler. De oude route via /api/live-stream
- * (op de VPS) maakte een omweg en gaf vaker haperingen.
+ * de luisteraar, net als bij de webspeler. Een omweg via de VPS gaf vaker
+ * haperingen en is daarom verwijderd.
  */
 export type LiveStreamMode = "direct-lan" | "proxy";
 

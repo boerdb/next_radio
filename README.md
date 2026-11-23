@@ -37,7 +37,7 @@ De app draait op poort **3002**. Gebruik nginx/Caddy als reverse proxy met HTTPS
 |-----------|-----------|--------------|
 | `NEXT_PUBLIC_LIVE_STREAM_DIRECT` | Nee | Interne stream op het LAN. Standaard `http://192.168.1.81:8000/radio` |
 
-Bens Web Radio Live speelt op een HTTP-adres in het LAN direct de interne stream. Via de HTTPS-app (wifi en mobiel) speelt dezelfde interne stream door `/api/live-stream`, zodat iPhone geluid heeft.
+Bens Web Radio Live speelt op een HTTP-adres in het LAN direct de interne stream. Via de HTTPS-app (wifi en mobiel) speelt de app de publieke stream `https://benswebradio.nl/radio` rechtstreeks.
 
 ### Publieke URL (Cloudflare tunnel)
 

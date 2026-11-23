@@ -3,16 +3,13 @@ import type { Station } from "./types";
 /** Public stream for Bens Web Radio Live; de app speelt deze rechtstreeks af. */
 export const LIVE_STREAM_PUBLIC_URL = "https://benswebradio.nl/radio";
 
-/** Same-origin proxy to the live encoder; niet meer in gebruik, blijft als terugvaloptie. */
-export const LIVE_STREAM_PATH = "/api/live-stream";
-
 /** Direct PlayIt/RSAS on LAN — browser on HTTP app or server-side upstream. */
 export const LIVE_STREAM_DIRECT_BASE =
   process.env.NEXT_PUBLIC_LIVE_STREAM_DIRECT ??
   process.env.LIVE_STREAM_INTERNAL_BASE ??
   "http://192.168.1.81:8000/radio";
 
-/** PlayIt on TerraMaster — server-side metadata + proxy upstream. */
+/** PlayIt on TerraMaster — server-side metadata upstream. */
 export const LIVE_STREAM_INTERNAL_BASE =
   process.env.LIVE_STREAM_INTERNAL_BASE ?? LIVE_STREAM_DIRECT_BASE;
 
