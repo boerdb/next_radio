@@ -10,6 +10,10 @@ type CacheEntry = {
 
 let cache: CacheEntry | null = null;
 
+/** Wanneer het huidige nummer voor het eerst gezien is. */
+let track: { key: string; since: number } | null = null;
+const STALE_MARGIN_S = 60;
+
 export type SublimeNowPlaying = {
   artist: string;
   title: string;
@@ -38,6 +42,7 @@ export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null
     artist?: string;
     title?: string;
     albumArt?: string;
+    duration?: number;
   };
 
   const artist = data.artist?.trim() ?? "";
@@ -49,9 +54,18 @@ export async function fetchSublimeNowPlaying(): Promise<SublimeNowPlaying | null
     return null;
   }
 
-  // Geen cover = reclame/nieuws/pauze; titel blijft soms staan op oude track.
-  if (!albumArt) {
-    cache = { value: null, at: Date.now() };
+  // Tijdens reclame/nieuws blijft de titel soms op het vorige nummer staan.
+  // Sublime stuurt niet altijd een hoes mee (sinds nov 2026 vaak leeg), dus
+  // daar niet meer op letten: een nummer dat ruim langer "speelt" dan het
+  // duurt, is verlopen.
+  const key = `${artist}|${title}`;
+  const now = Date.now();
+  if (!track || track.key !== key) {
+    track = { key, since: now };
+  }
+  const duration = typeof data.duration === "number" ? data.duration : 0;
+  if (duration > 0 && now - track.since > (duration + STALE_MARGIN_S) * 1000) {
+    cache = { value: null, at: now };
     return null;
   }
 

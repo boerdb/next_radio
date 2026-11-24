@@ -37,7 +37,13 @@ export async function GET(request: NextRequest) {
       const result: NowPlaying = {
         artist: sublime.artist,
         title: sublime.title,
-        art: sublime.albumArt ?? station.defaultArt ?? null,
+        art:
+          sublime.albumArt ??
+          (await resolveArtwork(
+            sublime.artist,
+            sublime.title,
+            station.defaultArt ?? null,
+          )),
         isLive: false,
       };
 
